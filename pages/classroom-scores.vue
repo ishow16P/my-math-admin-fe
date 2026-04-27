@@ -15,8 +15,8 @@
             </select>
           </div>
           <div class="flex-1 min-w-[140px]">
-            <label for="filter-classroom" class="block text-sm font-medium text-slate-700 mb-1">ห้อง (ไม่บังคับ)</label>
-            <input id="filter-classroom" v-model="filterClassroom" type="text" placeholder="เช่น 1/1" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+            <label for="filter-classroom" class="block text-sm font-medium text-slate-700 mb-1">เลขห้อง (ไม่บังคับ)</label>
+            <input id="filter-classroom" v-model.number="filterClassroom" type="number" min="1" placeholder="เช่น 3" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
           </div>
           <div class="flex items-end gap-2">
             <button
@@ -68,7 +68,7 @@
                   {{ levelMap[s.level] }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-slate-500">{{ s.classroom || '-' }}</td>
+              <td class="px-4 py-3 text-slate-500">{{ s.classroom ? `${s.level.replace('m', '')}/${s.classroom}` : '-' }}</td>
               <td class="px-4 py-3 text-center text-slate-600">{{ s.submissions.length }}</td>
               <td class="px-4 py-3 text-center">
                 <span v-if="s.submissions[0]" class="font-semibold text-slate-700">
@@ -117,7 +117,7 @@ const availableLevels = computed(() => {
 })
 
 const filterLevel = ref(availableLevels.value[0] || 'm1')
-const filterClassroom = ref('')
+const filterClassroom = ref(null)
 const scores = ref([])
 const loading = ref(false)
 const searched = ref(false)
@@ -138,21 +138,33 @@ async function loadScores() {
 }
 
 async function exportCSV() {
+  const config = useRuntimeConfig()
   const params = new URLSearchParams({ level: filterLevel.value })
   if (filterClassroom.value) params.append('classroom', filterClassroom.value)
 
-  const auth = useAdminAuthStore()
-  const response = await $fetch(
-    `/api/analytics/classroom/export?${params}`,
-    { responseType: 'blob', headers: { Authorization: `Bearer ${auth.token}` } }
-  )
-
-  const url = URL.createObjectURL(new Blob([response]))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `classroom-scores-${filterLevel.value}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
+  try {
+    const response = await fetch(
+      `${config.public.apiBase}/analytics/classroom/export?${params}`,
+      { headers: { Authorization: `Bearer ${auth.token}` } },
+    )
+    if (!response.ok) {
+      toastError('ไม่สามารถ export ได้ กรุณาลองใหม่')
+      return
+    }
+    const blob = await response.blob()
+    const classroomSuffix = filterClassroom.value ? `-room${filterClassroom.value}` : ''
+    const filename = `classroom-scores-${filterLevel.value}${classroomSuffix}.csv`
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  } catch {
+    toastError('ไม่สามารถ export ได้ กรุณาลองใหม่')
+  }
 }
 
 function getScoreColor(s) {

@@ -17,7 +17,7 @@
               <h1 class="text-lg font-bold text-slate-800">{{ submission.studentId?.name }}</h1>
               <div class="text-sm text-slate-400">
                 {{ submission.studentId?.studentId }}
-                <span v-if="submission.studentId?.classroom"> — ห้อง {{ submission.studentId.classroom }}</span>
+                <span v-if="submission.studentId?.classroom"> — ห้อง {{ submission.studentId.level?.replace('m', '') }}/{{ submission.studentId.classroom }}</span>
                 — {{ levelMap[submission.level] }}
               </div>
             </div>

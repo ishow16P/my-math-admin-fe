@@ -46,7 +46,7 @@
                   {{ levelMap[s.level] }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-slate-500 text-sm">{{ s.classroom || '-' }}</td>
+              <td class="px-4 py-3 text-slate-500 text-sm">{{ s.classroom ? `${s.level.replace('m', '')}/${s.classroom}` : '-' }}</td>
               <td class="px-4 py-3 text-right">
                 <button @click="openModal(s)" class="p-1.5 rounded hover:bg-slate-100 transition">
                   <Pencil :size="14" class="text-slate-400" />
@@ -89,8 +89,8 @@
               </select>
             </div>
             <div>
-              <label for="s-classroom" class="block text-sm font-medium text-slate-700 mb-1">ห้อง (เช่น 1/1, 2/3)</label>
-              <input id="s-classroom" v-model="form.classroom" type="text" placeholder="เช่น 1/1"
+              <label for="s-classroom" class="block text-sm font-medium text-slate-700 mb-1">เลขห้อง</label>
+              <input id="s-classroom" v-model.number="form.classroom" type="number" min="1" placeholder="เช่น 3"
                 class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
             </div>
             <div>
@@ -137,7 +137,7 @@ const students = ref([])
 const filterLevel = ref('all')
 const showModal = ref(false)
 const editingId = ref(null)
-const form = reactive({ studentId: '', name: '', level: 'm1', classroom: '', password: '' })
+const form = reactive({ studentId: '', name: '', level: 'm1', classroom: null, password: '' })
 
 const availableLevels = computed(() => {
   if (auth.isSuperAdmin) return ['m1', 'm2', 'm3']
@@ -158,14 +158,14 @@ function openModal(s = null) {
     form.studentId = s.studentId
     form.name = s.name
     form.level = s.level
-    form.classroom = s.classroom || ''
+    form.classroom = s.classroom ?? null
     form.password = ''
   } else {
     editingId.value = null
     form.studentId = ''
     form.name = ''
     form.level = availableLevels.value[0] || 'm1'
-    form.classroom = ''
+    form.classroom = null
     form.password = ''
   }
   showModal.value = true

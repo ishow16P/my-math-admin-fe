@@ -14,8 +14,8 @@
             </select>
           </div>
           <div class="flex-1">
-            <label for="progress-classroom" class="block text-sm font-medium text-slate-700 mb-1">ห้อง</label>
-            <input id="progress-classroom" v-model="filterClassroom" @change="loadStudents" type="text" placeholder="เช่น 1/1" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+            <label for="progress-classroom" class="block text-sm font-medium text-slate-700 mb-1">เลขห้อง</label>
+            <input id="progress-classroom" v-model.number="filterClassroom" @change="loadStudents" type="number" min="1" placeholder="เช่น 3" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
           </div>
           <div class="flex-1">
             <label for="progress-student" class="block text-sm font-medium text-slate-700 mb-1">นักเรียน</label>
@@ -51,7 +51,7 @@
             </div>
             <div>
               <div class="font-semibold text-slate-800">{{ progress.student?.name }}</div>
-              <div class="text-sm text-slate-400">{{ progress.student?.studentId }} — {{ levelMap[progress.student?.level] }} ห้อง {{ progress.student?.classroom || '-' }}</div>
+              <div class="text-sm text-slate-400">{{ progress.student?.studentId }} — {{ progress.student?.classroom ? `${progress.student.level?.replace('m', '')}/${progress.student.classroom}` : levelMap[progress.student?.level] }}</div>
             </div>
           </div>
         </div>
@@ -151,7 +151,7 @@ const availableLevels = computed(() => {
 })
 
 const filterLevel = ref('')
-const filterClassroom = ref('')
+const filterClassroom = ref(null)
 const selectedStudentId = ref('')
 const students = ref([])
 const progress = ref(null)

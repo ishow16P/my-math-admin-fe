@@ -4,7 +4,7 @@
       <div class="flex items-center justify-between mb-6">
         <div>
           <h1 class="text-xl font-bold text-slate-800">จัดการครู</h1>
-          <p class="text-sm text-slate-400 mt-0.5">เฉพาะ Superadmin เท่านั้น</p>
+          <p class="text-sm text-slate-400 mt-0.5">เฉพาะผู้ดูแลระบบเท่านั้น</p>
         </div>
         <button
           @click="openModal()"
