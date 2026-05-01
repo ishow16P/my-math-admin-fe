@@ -32,11 +32,16 @@ async function render(val) {
       mf.setAttribute('read-only', '')
       mf.value = line
       mf.style.display = 'block'
+      mf.style.width = '100%'
       mf.style.background = 'transparent'
       mf.style.border = 'none'
       mf.style.padding = '0'
+      mf.style.margin = '0'
       mf.style.fontSize = '1rem'
       mf.style.lineHeight = '1.75'
+      mf.style.webkitFontSmoothing = 'antialiased'
+      mf.style.MozOsxFontSmoothing = 'grayscale'
+      mf.style.transform = 'translateZ(0)'
       container.appendChild(mf)
     }
   })
@@ -47,8 +52,22 @@ watch(() => props.value, render)
 </script>
 
 <style>
+.math-display-container {
+  width: 100%;
+  overflow: visible;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 .math-display-container math-field[read-only] {
   pointer-events: none;
+  -webkit-user-select: text;
   user-select: text;
+  /* Safari fix: prevent font scaling */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Safari fix: force own stacking context */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 </style>

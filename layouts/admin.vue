@@ -86,9 +86,11 @@ import { GraduationCap, LayoutDashboard, FileText, Users, ClipboardCheck, LogOut
 import ToastContainer from '~/components/ToastContainer.vue'
 import ConfirmDialog from '~/components/ConfirmDialog.vue'
 import { useAdminAuthStore } from '~/stores/auth'
+import { useConfirm } from '~/composables/useConfirm'
 
 const auth = useAdminAuthStore()
 const { logout } = useAuth()
+const { confirm } = useConfirm()
 const router = useRouter()
 const route = useRoute()
 const mobileMenu = ref(false)
@@ -113,6 +115,12 @@ function isActive(path) {
 }
 
 async function handleLogout() {
+  const ok = await confirm({
+    title: 'ออกจากระบบ',
+    message: 'ต้องการออกจากระบบหรือไม่?',
+    confirmLabel: 'ออกจากระบบ',
+  })
+  if (!ok) return
   await logout()
   router.push('/')
 }
