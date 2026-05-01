@@ -181,10 +181,10 @@ onMounted(async () => {
       questionId: a.questionId,
       problemSnapshot: a.problemSnapshot,
       problemImageSnapshot: a.problemImageSnapshot || '',
-      step1: { ...(a.step1 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step1?.scoreGiven || 0 },
-      step2: { ...(a.step2 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step2?.scoreGiven || 0 },
-      step3: { ...(a.step3 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step3?.scoreGiven || 0 },
-      step4: { ...(a.step4 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step4?.scoreGiven || 0 },
+      step1: { ...(a.step1 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step1Score || 0 },
+      step2: { ...(a.step2 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step2Score || 0 },
+      step3: { ...(a.step3 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step3Score || 0 },
+      step4: { ...(a.step4 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step4Score || 0 },
       teacherComment: a.teacherComment || '',
     }))
   } catch (e) {
