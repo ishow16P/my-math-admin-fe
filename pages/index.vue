@@ -5,7 +5,7 @@
         <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-2xl mb-4">
           <GraduationCap :size="32" class="text-indigo-600" />
         </div>
-        <h1 class="text-2xl font-bold text-slate-800">My Math Admin</h1>
+        <h1 class="text-2xl font-bold text-slate-800">Math Exam Admin</h1>
         <p class="text-slate-500 mt-1">ระบบจัดการข้อสอบสำหรับคุณครู</p>
       </div>
 

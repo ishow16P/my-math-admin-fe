@@ -9,14 +9,31 @@
       <div class="bg-white rounded-xl border border-slate-200 p-5 mb-6">
         <div class="flex flex-wrap gap-3">
           <div class="flex-1 min-w-[140px]">
-            <label for="filter-level" class="block text-sm font-medium text-slate-700 mb-1">ระดับ</label>
+            <label
+              for="filter-level"
+              class="block text-sm font-medium text-slate-700 mb-1"
+              >ระดับ</label
+            >
             <select id="filter-level" v-model="filterLevel" :class="filterControlClass">
-              <option v-for="lvl in availableLevels" :key="lvl" :value="lvl">{{ levelMap[lvl] }}</option>
+              <option v-for="lvl in availableLevels" :key="lvl" :value="lvl">
+                {{ levelMap[lvl] }}
+              </option>
             </select>
           </div>
           <div class="flex-1 min-w-[140px]">
-            <label for="filter-classroom" class="block text-sm font-medium text-slate-700 mb-1">เลขห้อง (ไม่บังคับ)</label>
-            <input id="filter-classroom" v-model.number="filterClassroom" type="number" min="1" placeholder="เช่น 3" :class="filterControlClass" />
+            <label
+              for="filter-classroom"
+              class="block text-sm font-medium text-slate-700 mb-1"
+              >เลขห้อง (ไม่บังคับ)</label
+            >
+            <input
+              id="filter-classroom"
+              v-model.number="filterClassroom"
+              type="number"
+              min="1"
+              placeholder="เช่น 3"
+              :class="filterControlClass"
+            />
           </div>
           <div class="flex items-end gap-2">
             <button
@@ -32,7 +49,7 @@
               class="h-10 inline-flex items-center justify-center gap-1.5 px-4 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50"
             >
               <Download :size="14" />
-              Export CSV
+              Export
             </button>
           </div>
         </div>
@@ -44,7 +61,10 @@
       </div>
 
       <!-- Table -->
-      <div v-else-if="scores.length > 0" class="bg-white rounded-xl border border-slate-200 overflow-x-auto">
+      <div
+        v-else-if="scores.length > 0"
+        class="bg-white rounded-xl border border-slate-200 overflow-x-auto"
+      >
         <table class="w-full text-sm">
           <thead class="bg-slate-50 text-slate-500">
             <tr>
@@ -64,12 +84,18 @@
               <td class="px-4 py-3 font-mono text-slate-600">{{ s.studentId }}</td>
               <td class="px-4 py-3 text-slate-800">{{ s.name }}</td>
               <td class="px-4 py-3">
-                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                <span
+                  class="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700"
+                >
                   {{ levelMap[s.level] }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-slate-500">{{ s.classroom ? `${s.level.replace('m', '')}/${s.classroom}` : '-' }}</td>
-              <td class="px-4 py-3 text-center text-slate-600">{{ s.submissions.length }}</td>
+              <td class="px-4 py-3 text-slate-500">
+                {{ s.classroom ? `${s.level.replace("m", "")}/${s.classroom}` : "-" }}
+              </td>
+              <td class="px-4 py-3 text-center text-slate-600">
+                {{ s.submissions.length }}
+              </td>
               <td class="px-4 py-3 text-center">
                 <span v-if="s.submissions[0]" class="font-semibold text-slate-700">
                   {{ s.submissions[0].totalScore }}/{{ s.submissions[0].maxScore }}
@@ -82,7 +108,9 @@
                   class="font-semibold"
                   :class="getScoreColor(s)"
                 >
-                  {{ s.submissions[s.submissions.length - 1].totalScore }}/{{ s.submissions[s.submissions.length - 1].maxScore }}
+                  {{ s.submissions[s.submissions.length - 1].totalScore }}/{{
+                    s.submissions[s.submissions.length - 1].maxScore
+                  }}
                 </span>
                 <span v-else class="text-slate-300">-</span>
               </td>
@@ -99,86 +127,87 @@
 </template>
 
 <script setup>
-import { Loader2, Download } from 'lucide-vue-next'
-import { useApi } from '~/composables/useApi'
-import { useToast } from '~/composables/useToast'
-import { useAdminAuthStore } from '~/stores/auth'
+import { Loader2, Download } from "lucide-vue-next";
+import { useApi } from "~/composables/useApi";
+import { useToast } from "~/composables/useToast";
+import { useAdminAuthStore } from "~/stores/auth";
 
-definePageMeta({ middleware: 'auth', layout: false })
+definePageMeta({ middleware: "auth", layout: false });
 
-const { apiFetch } = useApi()
-const { error: toastError } = useToast()
-const auth = useAdminAuthStore()
-const levelMap = { m1: 'ม.1', m2: 'ม.2', m3: 'ม.3' }
+const { apiFetch } = useApi();
+const { error: toastError } = useToast();
+const auth = useAdminAuthStore();
+const levelMap = { m1: "ม.1", m2: "ม.2", m3: "ม.3" };
 
 const availableLevels = computed(() => {
-  if (auth.isSuperAdmin) return ['m1', 'm2', 'm3']
-  return auth.managedLevels || []
-})
+  if (auth.isSuperAdmin) return ["m1", "m2", "m3"];
+  return auth.managedLevels || [];
+});
 
 /** ให้ select/input สูงเท่ากันทุกเบราว์เซอร์ */
 const filterControlClass =
-  'w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-white text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/25 focus:border-indigo-400'
+  "w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-white text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/25 focus:border-indigo-400";
 
-const filterLevel = ref(availableLevels.value[0] || 'm1')
-const filterClassroom = ref(null)
-const scores = ref([])
-const loading = ref(false)
-const searched = ref(false)
+const filterLevel = ref(availableLevels.value[0] || "m1");
+const filterClassroom = ref(null);
+const scores = ref([]);
+const loading = ref(false);
+const searched = ref(false);
 
 async function loadScores() {
-  loading.value = true
-  searched.value = false
+  loading.value = true;
+  searched.value = false;
   try {
-    const params = new URLSearchParams({ level: filterLevel.value })
-    if (filterClassroom.value) params.append('classroom', filterClassroom.value)
-    scores.value = await apiFetch(`/analytics/classroom?${params}`)
-    searched.value = true
+    const params = new URLSearchParams({ level: filterLevel.value });
+    if (filterClassroom.value) params.append("classroom", filterClassroom.value);
+    scores.value = await apiFetch(`/analytics/classroom?${params}`);
+    searched.value = true;
   } catch (e) {
-    toastError(e?.data?.message || 'เกิดข้อผิดพลาด')
+    toastError(e?.data?.message || "เกิดข้อผิดพลาด");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 async function exportCSV() {
-  const config = useRuntimeConfig()
-  const params = new URLSearchParams({ level: filterLevel.value })
-  if (filterClassroom.value) params.append('classroom', filterClassroom.value)
+  const config = useRuntimeConfig();
+  const params = new URLSearchParams({ level: filterLevel.value });
+  if (filterClassroom.value) params.append("classroom", filterClassroom.value);
 
   try {
     const response = await fetch(
       `${config.public.apiBase}/analytics/classroom/export?${params}`,
-      { headers: { Authorization: `Bearer ${auth.token}` } },
-    )
+      { headers: { Authorization: `Bearer ${auth.token}` } }
+    );
     if (!response.ok) {
-      toastError('ไม่สามารถ export ได้ กรุณาลองใหม่')
-      return
+      toastError("ไม่สามารถ export ได้ กรุณาลองใหม่");
+      return;
     }
-    const blob = await response.blob()
-    const classroomSuffix = filterClassroom.value ? `-room${filterClassroom.value}` : ''
-    const filename = `classroom-scores-${filterLevel.value}${classroomSuffix}.csv`
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    URL.revokeObjectURL(url)
+    const blob = await response.blob();
+    const levelLabel = levelMap[filterLevel.value] || filterLevel.value;
+    const classroomSuffix = filterClassroom.value ? `-ห้อง${filterClassroom.value}` : "";
+    const filename = `ข้อมูลคะแนน-${levelLabel}${classroomSuffix}.csv`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   } catch {
-    toastError('ไม่สามารถ export ได้ กรุณาลองใหม่')
+    toastError("ไม่สามารถ export ได้ กรุณาลองใหม่");
   }
 }
 
 function getScoreColor(s) {
-  if (!s.submissions.length || !s.submissions[0]) return 'text-slate-500'
-  const first = s.submissions[0]
-  const last = s.submissions[s.submissions.length - 1]
-  const firstPct = first.maxScore ? first.totalScore / first.maxScore : 0
-  const lastPct = last.maxScore ? last.totalScore / last.maxScore : 0
-  if (lastPct > firstPct) return 'text-emerald-600'
-  if (lastPct < firstPct) return 'text-red-500'
-  return 'text-slate-700'
+  if (!s.submissions.length || !s.submissions[0]) return "text-slate-500";
+  const first = s.submissions[0];
+  const last = s.submissions[s.submissions.length - 1];
+  const firstPct = first.maxScore ? first.totalScore / first.maxScore : 0;
+  const lastPct = last.maxScore ? last.totalScore / last.maxScore : 0;
+  if (lastPct > firstPct) return "text-emerald-600";
+  if (lastPct < firstPct) return "text-red-500";
+  return "text-slate-700";
 }
 </script>

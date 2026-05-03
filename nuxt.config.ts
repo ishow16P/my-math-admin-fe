@@ -8,7 +8,7 @@ export default defineNuxtConfig({
   ],
   app: {
     head: {
-      title: 'My Math Admin - ระบบจัดการข้อสอบ',
+      title: 'Math Exam Admin - ระบบจัดการข้อสอบ',
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       ],

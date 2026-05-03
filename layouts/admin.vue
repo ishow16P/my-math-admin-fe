@@ -5,7 +5,7 @@
       <div class="p-4 border-b border-slate-100">
         <div class="flex items-center gap-2">
           <GraduationCap :size="24" class="text-indigo-600" />
-          <span class="font-bold text-slate-800">My Math Admin</span>
+          <span class="font-bold text-slate-800">Math Exam Admin</span>
         </div>
       </div>
 
@@ -44,7 +44,7 @@
         <button @click="mobileMenu = !mobileMenu" class="p-2 rounded-lg hover:bg-slate-100">
           <Menu :size="20" class="text-slate-600" />
         </button>
-        <span class="font-bold text-slate-800">My Math Admin</span>
+        <span class="font-bold text-slate-800">Math Exam Admin</span>
         <div class="w-10" />
       </header>
 
@@ -54,7 +54,7 @@
         <div class="absolute left-0 top-0 bottom-0 w-64 bg-white shadow-xl p-3 space-y-1">
           <div class="p-3 mb-2 flex items-center gap-2">
             <GraduationCap :size="24" class="text-indigo-600" />
-            <span class="font-bold text-slate-800">My Math Admin</span>
+            <span class="font-bold text-slate-800">Math Exam Admin</span>
           </div>
           <NuxtLink
             v-for="item in menuItems"
