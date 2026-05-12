@@ -21,10 +21,16 @@
                 v-model="form.email"
                 type="email"
                 placeholder="teacher@mymath.com"
-                required
-                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 transition placeholder:text-slate-300"
+                @input="errors.email = ''"
+                :class="[
+                  'w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 transition placeholder:text-slate-300',
+                  errors.email
+                    ? 'border-red-400 focus:ring-red-200'
+                    : 'border-slate-200 focus:ring-indigo-300 focus:border-indigo-300'
+                ]"
               />
             </div>
+            <p v-if="errors.email" class="mt-1 text-xs text-red-500">{{ errors.email }}</p>
           </div>
 
           <div>
@@ -35,10 +41,16 @@
                 v-model="form.password"
                 type="password"
                 placeholder="กรอกรหัสผ่าน"
-                required
-                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 transition placeholder:text-slate-300"
+                @input="errors.password = ''"
+                :class="[
+                  'w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 transition placeholder:text-slate-300',
+                  errors.password
+                    ? 'border-red-400 focus:ring-red-200'
+                    : 'border-slate-200 focus:ring-indigo-300 focus:border-indigo-300'
+                ]"
               />
             </div>
+            <p v-if="errors.password" class="mt-1 text-xs text-red-500">{{ errors.password }}</p>
           </div>
 
           <div v-if="error" class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 flex items-center gap-2">
@@ -72,15 +84,36 @@ const router = useRouter()
 const form = reactive({ email: '', password: '' })
 const loading = ref(false)
 const error = ref('')
+const errors = reactive({ email: '', password: '' })
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function validate() {
+  if (!form.email.trim()) {
+    errors.email = 'กรุณากรอกอีเมล'
+  } else if (!emailRegex.test(form.email.trim())) {
+    errors.email = 'รูปแบบอีเมลไม่ถูกต้อง'
+  } else {
+    errors.email = ''
+  }
+  errors.password = form.password ? '' : 'กรุณากรอกรหัสผ่าน'
+  return !errors.email && !errors.password
+}
 
 async function handleLogin() {
   error.value = ''
+  if (!validate()) return
   loading.value = true
   try {
     await login(form.email, form.password)
     router.push('/dashboard')
   } catch (e) {
-    error.value = e?.data?.message || 'เข้าสู่ระบบไม่สำเร็จ'
+    const status = e?.status ?? e?.response?.status
+    if (status === 401 || status === 400) {
+      error.value = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'
+    } else {
+      error.value = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'
+    }
   } finally {
     loading.value = false
   }
