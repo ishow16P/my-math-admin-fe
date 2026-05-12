@@ -1,7 +1,7 @@
 <template>
   <NuxtLayout name="admin">
-    <div class="p-6 md:p-8 max-w-4xl">
-      <NuxtLink to="/submissions" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium mb-4 inline-block">
+    <div class="p-6 md:p-8 max-w-3xl">
+      <NuxtLink to="/submissions" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium mb-5 inline-flex items-center gap-1">
         ← กลับรายการข้อสอบ
       </NuxtLink>
 
@@ -9,93 +9,162 @@
         <Loader2 :size="24" class="animate-spin text-indigo-500" />
       </div>
 
-      <div v-else-if="submission">
-        <!-- Header -->
-        <div class="bg-white rounded-xl border border-slate-200 p-5 mb-6">
-          <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
+      <div v-else-if="submission" class="space-y-5">
+        <!-- Header Card -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <div class="flex items-start justify-between gap-3 flex-wrap">
             <div>
-              <h1 class="text-lg font-bold text-slate-800">{{ submission.studentId?.name }}</h1>
-              <div class="text-sm text-slate-400">
-                {{ submission.studentId?.studentId }}
-                <span v-if="submission.studentId?.classroom"> — ห้อง {{ submission.studentId.level?.replace('m', '') }}/{{ submission.studentId.classroom }}</span>
-                — {{ levelMap[submission.level] }}
+              <h1 class="text-base font-bold text-slate-800">{{ submission.studentId?.name }}</h1>
+              <div class="text-sm text-slate-400 mt-0.5">
+                รหัส {{ submission.studentId?.studentId }}
+                <span v-if="submission.studentId?.classroom"> · ห้อง {{ submission.studentId.level?.replace('m', '') }}/{{ submission.studentId.classroom }}</span>
+                · {{ levelMap[submission.level] }}
               </div>
             </div>
-            <span
-              class="px-3 py-1 rounded-full text-xs font-medium"
-              :class="submission.status === 'graded' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'"
-            >
-              {{ submission.status === 'graded' ? 'ตรวจแล้ว' : 'รอตรวจ' }}
-            </span>
+            <div class="flex items-center gap-3">
+              <div class="text-right">
+                <div class="text-2xl font-bold text-indigo-600">{{ computedTotal }}<span class="text-sm font-normal text-slate-400">/30</span></div>
+                <div class="text-xs text-slate-400">คะแนนรวม</div>
+              </div>
+              <span
+                class="px-3 py-1 rounded-full text-xs font-medium"
+                :class="submission.status === 'graded' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'"
+              >
+                {{ submission.status === 'graded' ? 'ตรวจแล้ว' : 'รอตรวจ' }}
+              </span>
+            </div>
           </div>
-          <div class="flex items-center gap-4 text-sm text-slate-600">
-            <span>คะแนนรวม: <span class="font-bold text-indigo-600 text-lg">{{ computedTotal }}</span><span class="text-slate-400">/30</span></span>
-            <span v-if="submission.gradedBy">ตรวจโดย: {{ submission.gradedBy?.name || 'ครู' }}</span>
+          <div v-if="submission.gradedBy" class="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-400">
+            ตรวจโดย {{ submission.gradedBy?.name || 'ครู' }}
           </div>
         </div>
 
-        <!-- Answers -->
-        <form @submit.prevent="handleGrade" class="space-y-6">
+        <!-- Answer Cards -->
+        <form @submit.prevent="handleGrade" class="space-y-5">
           <div
             v-for="(ans, index) in grades"
             :key="index"
             class="bg-white rounded-xl border border-slate-200 overflow-hidden"
           >
-            <!-- Answer Header -->
+            <!-- Question Header -->
             <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-              <h3 class="font-semibold text-slate-800">ข้อ {{ index + 1 }}</h3>
-              <div class="text-sm font-semibold">
-                <span class="text-indigo-600">{{ questionScore(index) }}</span>
-                <span class="text-slate-400">/10</span>
+              <span class="font-semibold text-slate-700 text-sm">ข้อ {{ index + 1 }}</span>
+              <div class="flex items-center gap-1.5">
+                <span class="text-lg font-bold text-indigo-600">{{ questionScore(index) }}</span>
+                <span class="text-sm text-slate-400">/ 10 คะแนน</span>
               </div>
             </div>
 
-            <div class="p-5 space-y-4">
+            <div class="p-5 space-y-5">
               <!-- Problem -->
-              <div class="p-3 bg-indigo-50 rounded-lg border border-indigo-100">
-                <div class="text-xs font-medium text-indigo-500 mb-1">โจทย์</div>
-                <div class="text-sm text-slate-800 whitespace-pre-wrap">{{ ans.problemSnapshot }}</div>
-                <img v-if="ans.problemImageSnapshot" :src="ans.problemImageSnapshot" alt="โจทย์" class="mt-2 max-w-full rounded-lg" />
+              <div class="rounded-lg bg-indigo-50 border border-indigo-100 p-4">
+                <div class="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-2">โจทย์</div>
+                <div class="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">{{ ans.problemSnapshot }}</div>
+                <img v-if="ans.problemImageSnapshot" :src="ans.problemImageSnapshot" alt="โจทย์" class="mt-3 max-w-full rounded-lg" />
               </div>
 
-              <!-- 4 Steps with per-step scoring -->
-              <div v-for="step in STEPS" :key="step.key" v-show="ans[step.key]?.text || ans[step.key]?.imageUrl" class="space-y-1">
-                <div class="flex items-center justify-between">
-                  <div class="text-xs font-semibold text-slate-500">{{ step.label }}</div>
-                  <div class="flex items-center gap-1.5">
-                    <label :for="`score-${index}-${step.key}`" class="text-xs text-slate-400">คะแนน:</label>
-                    <input
-                      :id="`score-${index}-${step.key}`"
-                      v-model.number="ans[step.key].scoreGiven"
-                      type="number"
-                      min="0"
-                      :max="step.maxScore"
-                      @input="clampScore(ans, step)"
-                      class="w-16 px-2 py-0.5 border border-slate-200 rounded-lg text-xs text-center"
-                    />
-                    <span class="text-xs text-slate-400">/{{ step.maxScore }}</span>
+              <!-- Steps -->
+              <div class="space-y-4">
+                <div
+                  v-for="step in STEPS"
+                  :key="step.key"
+                  v-show="ans[step.key]?.text || ans[step.key]?.imageUrl"
+                  class="rounded-lg border border-slate-200 overflow-hidden"
+                >
+                  <!-- Step Header: label + score -->
+                  <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+                    <span class="text-xs font-semibold text-slate-600">{{ step.label }}</span>
+                    <div class="flex items-center gap-1.5">
+                      <label :for="`score-${index}-${step.key}`" class="text-xs text-slate-400">คะแนน</label>
+                      <input
+                        :id="`score-${index}-${step.key}`"
+                        v-model.number="ans[step.key].scoreGiven"
+                        type="number"
+                        min="0"
+                        :max="step.maxScore"
+                        @input="clampScore(ans, step)"
+                        class="w-14 px-2 py-0.5 border border-slate-200 rounded-md text-sm text-center font-semibold text-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                      />
+                      <span class="text-xs text-slate-400">/ {{ step.maxScore }}</span>
+                    </div>
+                  </div>
+
+                  <div class="p-4 space-y-3">
+                    <!-- Student Answer -->
+                    <div>
+                      <div class="text-xs text-slate-400 mb-1.5">คำตอบนักเรียน</div>
+                      <div v-if="ans[step.key]?.text" class="p-3 bg-slate-50 rounded-lg border border-slate-100 text-sm">
+                        <MathDisplay :value="ans[step.key].text" />
+                      </div>
+                      <img
+                        v-if="ans[step.key]?.imageUrl"
+                        :src="ans[step.key].imageUrl"
+                        alt="ภาพวาด"
+                        class="max-w-full rounded-lg border border-slate-200"
+                      />
+                    </div>
+
+                    <!-- Teacher Feedback -->
+                    <div>
+                      <div class="flex items-center justify-between mb-1.5">
+                        <label :for="`feedback-${index}-${step.key}`" class="text-xs font-medium text-slate-500">
+                          ข้อเสนอแนะขั้นที่ {{ step.key.replace('step', '') }}
+                        </label>
+                        <div v-if="ans.quickFeedbacks?.length > 0" class="relative">
+                          <button
+                            type="button"
+                            @click.stop="toggleDropdown(`${index}-${step.key}`)"
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-slate-200 bg-white text-xs text-slate-500 hover:border-indigo-300 hover:text-indigo-600 transition"
+                          >
+                            <Zap :size="11" />
+                            คำแนะนำ
+                            <ChevronDown
+                              :size="11"
+                              class="transition-transform"
+                              :class="openDropdown === `${index}-${step.key}` ? 'rotate-180' : ''"
+                            />
+                          </button>
+                          <div
+                            v-if="openDropdown === `${index}-${step.key}`"
+                            @click.stop
+                            class="absolute right-0 top-full mt-1 z-20 w-72 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden"
+                          >
+                            <div class="px-3 py-2 bg-slate-50 border-b border-slate-100 text-xs font-medium text-slate-500">คำแนะนำสำเร็จรูป</div>
+                            <div class="max-h-48 overflow-y-auto">
+                              <button
+                                v-for="(fb, fi) in ans.quickFeedbacks"
+                                :key="fi"
+                                type="button"
+                                @click="appendQuickFeedback(ans, step.key, fb)"
+                                class="w-full text-left px-3 py-2.5 text-xs text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 border-b border-slate-100 last:border-0 transition leading-relaxed"
+                              >
+                                {{ fb }}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <textarea
+                        :id="`feedback-${index}-${step.key}`"
+                        v-model="ans[step.key].feedback"
+                        rows="3"
+                        :placeholder="`ระบุข้อเสนอแนะสำหรับขั้นที่ ${step.key.replace('step', '')}...`"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm leading-relaxed focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
+                      />
+                    </div>
                   </div>
                 </div>
-                <div v-if="ans[step.key]?.text" class="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                  <MathDisplay :value="ans[step.key].text" />
-                </div>
-                <img
-                  v-if="ans[step.key]?.imageUrl"
-                  :src="ans[step.key].imageUrl"
-                  alt="ภาพวาด"
-                  class="max-w-full rounded-lg border border-slate-200"
-                />
               </div>
 
-              <!-- Teacher Comment -->
-              <div>
-                <label :for="`comment-${index}`" class="block text-xs font-medium text-slate-500 mb-1">ความเห็นต่อข้อนี้</label>
+              <!-- Overall comment for this question -->
+              <div class="pt-1">
+                <label :for="`comment-${index}`" class="block text-xs font-medium text-slate-500 mb-1.5">ข้อเสนอแนะภาพรวมต่อข้อนี้</label>
                 <input
                   :id="`comment-${index}`"
                   v-model="ans.teacherComment"
                   type="text"
-                  placeholder="ความเห็นสำหรับข้อนี้..."
-                  class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                  placeholder="เช่น เข้าใจปัญหาถูกต้อง แต่ขาดการตรวจสอบคำตอบ"
+                  class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
                 />
               </div>
             </div>
@@ -103,17 +172,18 @@
 
           <!-- Overall Feedback -->
           <div class="bg-white rounded-xl border border-slate-200 p-5">
-            <label for="overall-feedback" class="block text-sm font-semibold text-slate-700 mb-2">Feedback ภาพรวม</label>
+            <label for="overall-feedback" class="block text-sm font-semibold text-slate-700 mb-1">ข้อเสนอแนะภาพรวม</label>
+            <p class="text-xs text-slate-400 mb-2">นักเรียนจะเห็นข้อความนี้ในหน้าผลการสอบ</p>
             <textarea
               id="overall-feedback"
               v-model="overallFeedback"
               rows="3"
-              placeholder="คอมเมนต์รวมถึงนักเรียน..."
-              class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none"
+              placeholder="เช่น ทำได้ดีในภาพรวม ควรพัฒนาทักษะการตรวจสอบคำตอบให้มากยิ่งขึ้น"
+              class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
             />
           </div>
 
-          <div class="flex justify-end">
+          <div class="flex justify-end pb-4">
             <button
               type="submit"
               :disabled="saving"
@@ -130,7 +200,7 @@
 </template>
 
 <script setup>
-import { CheckCircle2, Loader2 } from 'lucide-vue-next'
+import { CheckCircle2, Loader2, ChevronDown, Zap } from 'lucide-vue-next'
 import MathDisplay from '~/components/MathDisplay.vue'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
@@ -155,6 +225,21 @@ const loading = ref(true)
 const saving = ref(false)
 const overallFeedback = ref('')
 const grades = ref([])
+const openDropdown = ref(null)
+
+function toggleDropdown(key) {
+  openDropdown.value = openDropdown.value === key ? null : key
+}
+
+function closeDropdown() {
+  openDropdown.value = null
+}
+
+function appendQuickFeedback(ans, stepKey, text) {
+  const current = (ans[stepKey].feedback || '').trimEnd()
+  ans[stepKey].feedback = current ? `${current}\n${text}` : text
+  openDropdown.value = null
+}
 
 function clampScore(ans, step) {
   const val = ans[step.key].scoreGiven
@@ -173,6 +258,7 @@ const computedTotal = computed(() => {
 })
 
 onMounted(async () => {
+  document.addEventListener('click', closeDropdown)
   try {
     const data = await apiFetch(`/submissions/${route.params.id}`)
     submission.value = data
@@ -181,10 +267,11 @@ onMounted(async () => {
       questionId: a.questionId,
       problemSnapshot: a.problemSnapshot,
       problemImageSnapshot: a.problemImageSnapshot || '',
-      step1: { ...(a.step1 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step1Score || 0 },
-      step2: { ...(a.step2 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step2Score || 0 },
-      step3: { ...(a.step3 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step3Score || 0 },
-      step4: { ...(a.step4 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step4Score || 0 },
+      quickFeedbacks: a.quickFeedbacks || [],
+      step1: { ...(a.step1 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step1Score || 0, feedback: a.step1Feedback || '' },
+      step2: { ...(a.step2 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step2Score || 0, feedback: a.step2Feedback || '' },
+      step3: { ...(a.step3 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step3Score || 0, feedback: a.step3Feedback || '' },
+      step4: { ...(a.step4 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step4Score || 0, feedback: a.step4Feedback || '' },
       teacherComment: a.teacherComment || '',
     }))
   } catch (e) {
@@ -192,6 +279,10 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeDropdown)
 })
 
 async function handleGrade() {
@@ -207,6 +298,10 @@ async function handleGrade() {
           step2Score: g.step2.scoreGiven,
           step3Score: g.step3.scoreGiven,
           step4Score: g.step4.scoreGiven,
+          step1Feedback: g.step1.feedback,
+          step2Feedback: g.step2.feedback,
+          step3Feedback: g.step3.feedback,
+          step4Feedback: g.step4.feedback,
           teacherComment: g.teacherComment,
         })),
         overallFeedback: overallFeedback.value,

@@ -13,7 +13,7 @@
       </div>
 
       <!-- Filter -->
-      <div class="flex gap-2 mb-4 flex-wrap">
+      <div class="flex gap-2 mb-5 flex-wrap">
         <button
           v-for="lvl in ['all', ...availableLevels]"
           :key="lvl"
@@ -30,84 +30,192 @@
         <div
           v-for="q in filteredQuestions"
           :key="q._id"
-          class="bg-white rounded-xl border border-slate-200 p-4"
+          class="bg-white rounded-xl border border-slate-200 p-5"
         >
           <div class="flex items-start justify-between gap-4">
-            <div class="flex-1">
-              <div class="flex items-center gap-2 mb-1">
+            <div class="flex-1 min-w-0">
+              <!-- Badges -->
+              <div class="flex items-center gap-2 mb-2">
                 <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
                   {{ levelMap[q.level] }}
                 </span>
-                <span v-if="!q.isActive" class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">
-                  ซ่อนอยู่
-                </span>
               </div>
-              <p class="text-sm text-slate-800 whitespace-pre-wrap">{{ q.problemText }}</p>
-              <p class="text-xs text-slate-400 mt-1">เฉลย: {{ q.referenceSolution }}</p>
+              <!-- Problem -->
+              <p class="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">{{ q.problemText }}</p>
+              <!-- Reference Solution -->
+              <div class="mt-2 pt-2 border-t border-slate-100">
+                <span class="text-xs text-slate-400">เฉลย: </span>
+                <span class="text-xs text-slate-600">{{ q.referenceSolution }}</span>
+              </div>
             </div>
-            <div class="flex items-center gap-1">
-              <button @click="openModal(q)" class="p-2 rounded-lg hover:bg-slate-100 transition">
-                <Pencil :size="14" class="text-slate-400" />
+            <!-- Actions -->
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <button @click="openModal(q)" class="p-2 rounded-lg hover:bg-indigo-50 transition" title="แก้ไข">
+                <Pencil :size="14" class="text-indigo-400" />
               </button>
-              <button @click="handleDelete(q._id)" class="p-2 rounded-lg hover:bg-red-50 transition">
+              <button @click="handleDelete(q._id)" class="p-2 rounded-lg hover:bg-red-50 transition" title="ซ่อน">
                 <Trash2 :size="14" class="text-red-400" />
               </button>
             </div>
           </div>
         </div>
+
+        <div v-if="filteredQuestions.length === 0" class="py-16 text-center text-slate-400 text-sm">
+          ยังไม่มีข้อสอบในระดับนี้
+        </div>
       </div>
 
       <!-- Modal -->
       <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/30" @click="showModal = false" />
-        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
-          <h2 class="text-lg font-semibold text-slate-800 mb-4">
-            {{ editingId ? 'แก้ไขข้อสอบ' : 'เพิ่มข้อสอบ' }}
-          </h2>
+        <div class="absolute inset-0 bg-black/40" @click="showModal = false" />
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
 
-          <form @submit.prevent="handleSave" class="space-y-4">
-            <div>
-              <label for="q-level" class="block text-sm font-medium text-slate-700 mb-1">ระดับชั้น</label>
-              <select id="q-level" v-model="form.level" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm">
-                <option v-for="lvl in availableLevels" :key="lvl" :value="lvl">{{ levelMap[lvl] }}</option>
-              </select>
-            </div>
+          <!-- Modal Header -->
+          <div class="px-6 pt-6 pb-4 border-b border-slate-100 flex-shrink-0">
+            <h2 class="text-base font-semibold text-slate-800">
+              {{ editingId ? 'แก้ไขข้อสอบ' : 'เพิ่มข้อสอบ' }}
+            </h2>
+          </div>
 
-            <div>
-              <label for="q-problem" class="block text-sm font-medium text-slate-700 mb-1">โจทย์</label>
-              <textarea id="q-problem" v-model="form.problemText" required rows="3"
-                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none" />
-            </div>
+          <!-- Modal Body (scrollable) -->
+          <div class="overflow-y-auto flex-1 px-6 py-5">
+            <form id="question-form" @submit.prevent="handleSave" class="space-y-5">
 
-            <div>
-              <label for="q-image-url" class="block text-sm font-medium text-slate-700 mb-1">URL รูปภาพ (ถ้ามี)</label>
-              <input id="q-image-url" v-model="form.problemImageUrl" type="text"
-                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
-            </div>
+              <!-- ระดับชั้น -->
+              <div>
+                <label for="q-level" class="block text-sm font-medium text-slate-700 mb-1.5">ระดับชั้น</label>
+                <select id="q-level" v-model="form.level" required
+                  class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                  <option v-for="lvl in availableLevels" :key="lvl" :value="lvl">{{ levelMap[lvl] }}</option>
+                </select>
+              </div>
 
-            <div>
-              <label for="q-solution" class="block text-sm font-medium text-slate-700 mb-1">เฉลย/แนวทาง</label>
-              <textarea id="q-solution" v-model="form.referenceSolution" required rows="2"
-                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none" />
-            </div>
+              <!-- โจทย์ -->
+              <div>
+                <label for="q-problem" class="block text-sm font-medium text-slate-700 mb-1.5">
+                  โจทย์ <span class="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="q-problem"
+                  v-model="form.problemText"
+                  rows="3"
+                  placeholder="ระบุข้อความโจทย์..."
+                  @input="errors.problemText = ''"
+                  :class="[
+                    'w-full px-3 py-2 border rounded-lg text-sm resize-none focus:outline-none focus:ring-1 placeholder:text-slate-300',
+                    errors.problemText
+                      ? 'border-red-400 focus:ring-red-300 bg-red-50'
+                      : 'border-slate-200 focus:ring-indigo-300'
+                  ]"
+                />
+                <p v-if="errors.problemText" class="mt-1 text-xs text-red-500">{{ errors.problemText }}</p>
+              </div>
 
-            <div>
-              <label for="q-answer" class="block text-sm font-medium text-slate-700 mb-1">คำตอบ</label>
-              <input id="q-answer" v-model="form.answer" type="text"
-                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
-            </div>
+              <!-- URL รูปภาพ -->
+              <div>
+                <label for="q-image-url" class="block text-sm font-medium text-slate-700 mb-1.5">
+                  URL รูปภาพประกอบ
+                  <span class="text-slate-400 font-normal">(ถ้ามี)</span>
+                </label>
+                <input id="q-image-url" v-model="form.problemImageUrl" type="text"
+                  placeholder="https://..."
+                  class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300" />
+              </div>
 
-            <div class="flex justify-end gap-2 pt-2">
-              <button type="button" @click="showModal = false"
-                class="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">
-                ยกเลิก
-              </button>
-              <button type="submit"
-                class="px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-                บันทึก
-              </button>
-            </div>
-          </form>
+              <!-- เฉลย -->
+              <div>
+                <label for="q-solution" class="block text-sm font-medium text-slate-700 mb-1.5">
+                  แนวทางเฉลย <span class="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="q-solution"
+                  v-model="form.referenceSolution"
+                  rows="2"
+                  placeholder="ระบุแนวทางการเฉลย..."
+                  @input="errors.referenceSolution = ''"
+                  :class="[
+                    'w-full px-3 py-2 border rounded-lg text-sm resize-none focus:outline-none focus:ring-1 placeholder:text-slate-300',
+                    errors.referenceSolution
+                      ? 'border-red-400 focus:ring-red-300 bg-red-50'
+                      : 'border-slate-200 focus:ring-indigo-300'
+                  ]"
+                />
+                <p v-if="errors.referenceSolution" class="mt-1 text-xs text-red-500">{{ errors.referenceSolution }}</p>
+              </div>
+
+              <!-- คำตอบ -->
+              <div>
+                <label for="q-answer" class="block text-sm font-medium text-slate-700 mb-1.5">
+                  คำตอบ
+                  <span class="text-slate-400 font-normal">(ถ้ามี)</span>
+                </label>
+                <input id="q-answer" v-model="form.answer" type="text"
+                  placeholder="ระบุคำตอบ..."
+                  class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300" />
+              </div>
+
+              <!-- คำแนะนำสำเร็จรูป -->
+              <div class="pt-1">
+                <div class="flex items-start justify-between mb-3">
+                  <div>
+                    <div class="text-sm font-medium text-slate-700">คำแนะนำ</div>
+                  </div>
+                  <span v-if="form.quickFeedbacks.length > 0" class="text-xs text-slate-400 mt-0.5">{{ form.quickFeedbacks.length }} รายการ</span>
+                </div>
+
+                <!-- Existing feedbacks -->
+                <div v-if="form.quickFeedbacks.length > 0" class="border border-slate-200 rounded-lg overflow-hidden mb-3">
+                  <div
+                    v-for="(fb, idx) in form.quickFeedbacks"
+                    :key="idx"
+                    class="flex items-center gap-3 px-3 py-2.5 border-b border-slate-100 last:border-0 hover:bg-slate-50 group"
+                  >
+                    <span class="text-xs text-slate-400 w-4 flex-shrink-0 text-center">{{ idx + 1 }}</span>
+                    <span class="flex-1 text-sm text-slate-700 leading-relaxed">{{ fb }}</span>
+                    <button
+                      type="button"
+                      @click="removeQuickFeedback(idx)"
+                      class="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 transition flex-shrink-0"
+                    >
+                      <X :size="13" class="text-red-400" />
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Add new feedback -->
+                <div class="flex gap-2">
+                  <input
+                    v-model="newFeedbackText"
+                    type="text"
+                    placeholder="พิมพ์คำแนะนำที่ต้องการเพิ่ม..."
+                    class="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
+                    @keydown.enter.prevent="addQuickFeedback"
+                  />
+                  <button
+                    type="button"
+                    @click="addQuickFeedback"
+                    class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition flex items-center gap-1.5 flex-shrink-0"
+                  >
+                    <Plus :size="14" />
+                    เพิ่ม
+                  </button>
+                </div>
+              </div>
+
+            </form>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2 flex-shrink-0">
+            <button type="button" @click="showModal = false"
+              class="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+              ยกเลิก
+            </button>
+            <button type="submit" form="question-form"
+              class="px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition">
+              บันทึก
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -115,7 +223,7 @@
 </template>
 
 <script setup>
-import { Plus, Pencil, Trash2 } from 'lucide-vue-next'
+import { Plus, Pencil, Trash2, X } from 'lucide-vue-next'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
 import { useConfirm } from '~/composables/useConfirm'
@@ -124,7 +232,7 @@ import { useAdminAuthStore } from '~/stores/auth'
 definePageMeta({ middleware: 'auth', layout: false })
 
 const { apiFetch } = useApi()
-const { error: toastError } = useToast()
+const { success: toastSuccess, error: toastError } = useToast()
 const { confirm } = useConfirm()
 const auth = useAdminAuthStore()
 const levelMap = { m1: 'ม.1', m2: 'ม.2', m3: 'ม.3' }
@@ -139,9 +247,28 @@ const form = reactive({
   problemImageUrl: '',
   referenceSolution: '',
   answer: '',
+  quickFeedbacks: [],
 })
+const newFeedbackText = ref('')
+const errors = reactive({ problemText: '', referenceSolution: '' })
 
-// สำหรับ teacher แสดงเฉพาะระดับที่จัดการ
+function validate() {
+  errors.problemText = form.problemText.trim() ? '' : 'กรุณาระบุข้อความโจทย์'
+  errors.referenceSolution = form.referenceSolution.trim() ? '' : 'กรุณาระบุแนวทางเฉลย'
+  return !errors.problemText && !errors.referenceSolution
+}
+
+function addQuickFeedback() {
+  const text = newFeedbackText.value.trim()
+  if (!text) return
+  form.quickFeedbacks.push(text)
+  newFeedbackText.value = ''
+}
+
+function removeQuickFeedback(index) {
+  form.quickFeedbacks.splice(index, 1)
+}
+
 const availableLevels = computed(() => {
   if (auth.isSuperAdmin) return ['m1', 'm2', 'm3']
   return auth.managedLevels || []
@@ -163,23 +290,31 @@ function openModal(q = null) {
     form.problemImageUrl = q.problemImageUrl || ''
     form.referenceSolution = q.referenceSolution
     form.answer = q.answer || ''
+    form.quickFeedbacks = [...(q.quickFeedbacks || [])]
   } else {
     editingId.value = null
-    form.level = 'm1'
+    form.level = availableLevels.value[0] || 'm1'
     form.problemText = ''
     form.problemImageUrl = ''
     form.referenceSolution = ''
     form.answer = ''
+    form.quickFeedbacks = []
   }
+  newFeedbackText.value = ''
+  errors.problemText = ''
+  errors.referenceSolution = ''
   showModal.value = true
 }
 
 async function handleSave() {
+  if (!validate()) return
   try {
     if (editingId.value) {
       await apiFetch(`/questions/${editingId.value}`, { method: 'PUT', body: { ...form } })
+      toastSuccess('แก้ไขข้อสอบเรียบร้อยแล้ว')
     } else {
       await apiFetch('/questions', { method: 'POST', body: { ...form } })
+      toastSuccess('เพิ่มข้อสอบเรียบร้อยแล้ว')
     }
     showModal.value = false
     await loadQuestions()
@@ -189,10 +324,11 @@ async function handleSave() {
 }
 
 async function handleDelete(id) {
-  const ok = await confirm({ title: 'ซ่อนข้อสอบ', message: 'ต้องการซ่อนข้อสอบนี้? (สามารถเปิดใช้งานใหม่ได้ภายหลัง)', confirmLabel: 'ซ่อน', danger: false })
+  const ok = await confirm({ title: 'ลบข้อสอบ', message: 'ต้องการลบข้อสอบนี้? การลบไม่สามารถย้อนกลับได้', confirmLabel: 'ลบเลย', danger: true })
   if (!ok) return
   try {
     await apiFetch(`/questions/${id}`, { method: 'DELETE' })
+    toastSuccess('ลบข้อสอบเรียบร้อยแล้ว')
     await loadQuestions()
   } catch (e) {
     toastError(e?.data?.message || 'เกิดข้อผิดพลาด')

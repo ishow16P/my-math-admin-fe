@@ -128,7 +128,7 @@ import { useAdminAuthStore } from '~/stores/auth'
 definePageMeta({ middleware: 'auth', layout: false })
 
 const { apiFetch } = useApi()
-const { error: toastError } = useToast()
+const { success: toastSuccess, error: toastError } = useToast()
 const { confirm } = useConfirm()
 const auth = useAdminAuthStore()
 const levelMap = { m1: 'ม.1', m2: 'ม.2', m3: 'ม.3' }
@@ -177,8 +177,10 @@ async function handleSave() {
     if (editingId.value && !body.password) delete body.password
     if (editingId.value) {
       await apiFetch(`/students/${editingId.value}`, { method: 'PUT', body })
+      toastSuccess('แก้ไขข้อมูลนักเรียนเรียบร้อยแล้ว')
     } else {
       await apiFetch('/students', { method: 'POST', body })
+      toastSuccess('เพิ่มนักเรียนเรียบร้อยแล้ว')
     }
     showModal.value = false
     await loadStudents()
@@ -192,6 +194,7 @@ async function handleDelete(id) {
   if (!ok) return
   try {
     await apiFetch(`/students/${id}`, { method: 'DELETE' })
+    toastSuccess('ลบนักเรียนเรียบร้อยแล้ว')
     await loadStudents()
   } catch (e) {
     toastError(e?.data?.message || 'เกิดข้อผิดพลาด')
