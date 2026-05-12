@@ -60,60 +60,120 @@
 
       <!-- Modal -->
       <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/30" @click="showModal = false" />
-        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-          <h2 class="text-lg font-semibold text-slate-800 mb-4">
-            {{ editingId ? 'แก้ไขครู' : 'เพิ่มครู' }}
-          </h2>
+        <div class="absolute inset-0 bg-black/40" @click="showModal = false" />
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
 
-          <form @submit.prevent="handleSave" class="space-y-4">
-            <div>
-              <label for="t-name" class="block text-sm font-medium text-slate-700 mb-1">ชื่อ-นามสกุล</label>
-              <input id="t-name" v-model="form.name" type="text" required
-                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
-            </div>
-            <div>
-              <label for="t-email" class="block text-sm font-medium text-slate-700 mb-1">อีเมล</label>
-              <input id="t-email" v-model="form.email" type="email" required :disabled="!!editingId"
-                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm disabled:bg-slate-50" />
-            </div>
-            <div>
-              <label for="t-password" class="block text-sm font-medium text-slate-700 mb-1">
-                {{ editingId ? 'รหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)' : 'รหัสผ่าน' }}
-              </label>
-              <input id="t-password" v-model="form.password" type="password" :required="!editingId"
-                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
-            </div>
-            <div>
-              <span class="block text-sm font-medium text-slate-700 mb-2">ระดับที่ดูแล</span>
-              <div class="flex gap-3">
-                <label
-                  v-for="lvl in ['m1', 'm2', 'm3']"
-                  :key="lvl"
-                  class="flex items-center gap-2 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    :value="lvl"
-                    v-model="form.managedLevels"
-                    class="rounded border-slate-300 text-indigo-600"
-                  />
-                  <span class="text-sm text-slate-700">{{ levelMap[lvl] }}</span>
+          <!-- Header -->
+          <div class="px-6 pt-6 pb-4 border-b border-slate-100 flex-shrink-0">
+            <h2 class="text-base font-semibold text-slate-800">
+              {{ editingId ? 'แก้ไขครู' : 'เพิ่มครู' }}
+            </h2>
+          </div>
+
+          <!-- Body -->
+          <div class="overflow-y-auto flex-1 px-6 py-5">
+            <form id="teacher-form" @submit.prevent="handleSave" class="space-y-4">
+
+              <!-- ชื่อ-นามสกุล -->
+              <div>
+                <label for="t-name" class="block text-sm font-medium text-slate-700 mb-1.5">
+                  ชื่อ-นามสกุล <span class="text-red-500">*</span>
                 </label>
+                <input
+                  id="t-name"
+                  v-model="form.name"
+                  type="text"
+                  placeholder="ระบุชื่อ-นามสกุล..."
+                  @input="errors.name = ''"
+                  :class="[
+                    'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 placeholder:text-slate-300',
+                    errors.name
+                      ? 'border-red-400 focus:ring-red-300 bg-red-50'
+                      : 'border-slate-200 focus:ring-indigo-300'
+                  ]"
+                />
+                <p v-if="errors.name" class="mt-1 text-xs text-red-500">{{ errors.name }}</p>
               </div>
-            </div>
 
-            <div class="flex justify-end gap-2 pt-2">
-              <button type="button" @click="showModal = false"
-                class="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">
-                ยกเลิก
-              </button>
-              <button type="submit"
-                class="px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-                บันทึก
-              </button>
-            </div>
-          </form>
+              <!-- อีเมล -->
+              <div>
+                <label for="t-email" class="block text-sm font-medium text-slate-700 mb-1.5">
+                  อีเมล <span v-if="!editingId" class="text-red-500">*</span>
+                </label>
+                <input
+                  id="t-email"
+                  v-model="form.email"
+                  type="email"
+                  :disabled="!!editingId"
+                  placeholder="ระบุอีเมล..."
+                  @input="errors.email = ''"
+                  :class="[
+                    'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 placeholder:text-slate-300 disabled:bg-slate-50 disabled:text-slate-400',
+                    errors.email
+                      ? 'border-red-400 focus:ring-red-300 bg-red-50'
+                      : 'border-slate-200 focus:ring-indigo-300'
+                  ]"
+                />
+                <p v-if="errors.email" class="mt-1 text-xs text-red-500">{{ errors.email }}</p>
+              </div>
+
+              <!-- รหัสผ่าน -->
+              <div>
+                <label for="t-password" class="block text-sm font-medium text-slate-700 mb-1.5">
+                  {{ editingId ? 'รหัสผ่านใหม่' : 'รหัสผ่าน' }}
+                  <span v-if="!editingId" class="text-red-500">*</span>
+                  <span v-else class="text-slate-400 font-normal">(เว้นว่างถ้าไม่เปลี่ยน)</span>
+                </label>
+                <input
+                  id="t-password"
+                  v-model="form.password"
+                  type="password"
+                  placeholder="ระบุรหัสผ่าน..."
+                  @input="errors.password = ''"
+                  :class="[
+                    'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 placeholder:text-slate-300',
+                    errors.password
+                      ? 'border-red-400 focus:ring-red-300 bg-red-50'
+                      : 'border-slate-200 focus:ring-indigo-300'
+                  ]"
+                />
+                <p v-if="errors.password" class="mt-1 text-xs text-red-500">{{ errors.password }}</p>
+              </div>
+
+              <!-- ระดับที่ดูแล -->
+              <div>
+                <span class="block text-sm font-medium text-slate-700 mb-2">ระดับที่ดูแล</span>
+                <div class="flex gap-4">
+                  <label
+                    v-for="lvl in ['m1', 'm2', 'm3']"
+                    :key="lvl"
+                    class="flex items-center gap-2 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      :value="lvl"
+                      v-model="form.managedLevels"
+                      class="rounded border-slate-300 text-indigo-600"
+                    />
+                    <span class="text-sm text-slate-700">{{ levelMap[lvl] }}</span>
+                  </label>
+                </div>
+              </div>
+
+            </form>
+          </div>
+
+          <!-- Footer -->
+          <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2 flex-shrink-0">
+            <button type="button" @click="showModal = false"
+              class="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+              ยกเลิก
+            </button>
+            <button type="submit" form="teacher-form"
+              class="px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition">
+              บันทึก
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -136,7 +196,6 @@ const auth = useAdminAuthStore()
 const router = useRouter()
 const levelMap = { m1: 'ม.1', m2: 'ม.2', m3: 'ม.3' }
 
-// เฉพาะ superadmin เข้าถึงได้
 onMounted(async () => {
   if (!auth.isSuperAdmin) {
     router.push('/dashboard')
@@ -150,6 +209,14 @@ const loading = ref(false)
 const showModal = ref(false)
 const editingId = ref(null)
 const form = reactive({ name: '', email: '', password: '', managedLevels: [] })
+const errors = reactive({ name: '', email: '', password: '' })
+
+function validate() {
+  errors.name = form.name.trim() ? '' : 'กรุณาระบุชื่อ-นามสกุล'
+  errors.email = (!editingId.value && !form.email.trim()) ? 'กรุณาระบุอีเมล' : ''
+  errors.password = (!editingId.value && !form.password) ? 'กรุณาระบุรหัสผ่าน' : ''
+  return !errors.name && !errors.email && !errors.password
+}
 
 function openModal(t = null) {
   if (t) {
@@ -165,10 +232,14 @@ function openModal(t = null) {
     form.password = ''
     form.managedLevels = []
   }
+  errors.name = ''
+  errors.email = ''
+  errors.password = ''
   showModal.value = true
 }
 
 async function handleSave() {
+  if (!validate()) return
   try {
     const body = { ...form }
     if (editingId.value && !body.password) delete body.password

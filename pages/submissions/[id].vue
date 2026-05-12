@@ -44,10 +44,10 @@
           <div
             v-for="(ans, index) in grades"
             :key="index"
-            class="bg-white rounded-xl border border-slate-200 overflow-hidden"
+            class="bg-white rounded-xl border border-slate-200"
           >
             <!-- Question Header -->
-            <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between rounded-t-xl">
               <span class="font-semibold text-slate-700 text-sm">ข้อ {{ index + 1 }}</span>
               <div class="flex items-center gap-1.5">
                 <span class="text-lg font-bold text-indigo-600">{{ questionScore(index) }}</span>
@@ -69,10 +69,10 @@
                   v-for="step in STEPS"
                   :key="step.key"
                   v-show="ans[step.key]?.text || ans[step.key]?.imageUrl"
-                  class="rounded-lg border border-slate-200 overflow-hidden"
+                  class="rounded-lg border border-slate-200"
                 >
                   <!-- Step Header: label + score -->
-                  <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+                  <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200 rounded-t-lg">
                     <span class="text-xs font-semibold text-slate-600">{{ step.label }}</span>
                     <div class="flex items-center gap-1.5">
                       <label :for="`score-${index}-${step.key}`" class="text-xs text-slate-400">คะแนน</label>
@@ -117,7 +117,7 @@
                             class="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-slate-200 bg-white text-xs text-slate-500 hover:border-indigo-300 hover:text-indigo-600 transition"
                           >
                             <Zap :size="11" />
-                            คำแนะนำ
+                            ข้อเสนอแนะ
                             <ChevronDown
                               :size="11"
                               class="transition-transform"
@@ -127,9 +127,9 @@
                           <div
                             v-if="openDropdown === `${index}-${step.key}`"
                             @click.stop
-                            class="absolute right-0 top-full mt-1 z-20 w-72 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden"
+                            class="absolute right-0 top-full mt-1 z-50 w-72 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden"
                           >
-                            <div class="px-3 py-2 bg-slate-50 border-b border-slate-100 text-xs font-medium text-slate-500">คำแนะนำสำเร็จรูป</div>
+                            <div class="px-3 py-2 bg-slate-50 border-b border-slate-100 text-xs font-medium text-slate-500">ข้อเสนอแนะที่ใช้งานบ่อย</div>
                             <div class="max-h-48 overflow-y-auto">
                               <button
                                 v-for="(fb, fi) in ans.quickFeedbacks"
@@ -147,7 +147,7 @@
                       <textarea
                         :id="`feedback-${index}-${step.key}`"
                         v-model="ans[step.key].feedback"
-                        rows="3"
+                        rows="1"
                         :placeholder="`ระบุข้อเสนอแนะสำหรับขั้นที่ ${step.key.replace('step', '')}...`"
                         class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm leading-relaxed focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
                       />
@@ -158,13 +158,42 @@
 
               <!-- Overall comment for this question -->
               <div class="pt-1">
-                <label :for="`comment-${index}`" class="block text-xs font-medium text-slate-500 mb-1.5">ข้อเสนอแนะภาพรวมต่อข้อนี้</label>
-                <input
+                <div class="flex items-center justify-between mb-1.5">
+                  <label :for="`comment-${index}`" class="text-xs font-medium text-slate-500">ข้อเสนอแนะภาพรวมต่อข้อนี้</label>
+                  <div v-if="ans.quickFeedbacks?.length > 0" class="relative">
+                    <button
+                      type="button"
+                      @click.stop="toggleDropdown(`${index}-comment`)"
+                      class="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-slate-200 bg-white text-xs text-slate-500 hover:border-indigo-300 hover:text-indigo-600 transition"
+                    >
+                      <Zap :size="11" />
+                      ข้อเสนอแนะ
+                      <ChevronDown :size="11" class="transition-transform" :class="openDropdown === `${index}-comment` ? 'rotate-180' : ''" />
+                    </button>
+                    <div
+                      v-if="openDropdown === `${index}-comment`"
+                      @click.stop
+                      class="absolute right-0 top-full mt-1 z-50 w-72 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden"
+                    >
+                      <div class="px-3 py-2 bg-slate-50 border-b border-slate-100 text-xs font-medium text-slate-500">ข้อเสนอแนะที่ใช้งานบ่อย</div>
+                      <div class="max-h-48 overflow-y-auto">
+                        <button
+                          v-for="(fb, fi) in ans.quickFeedbacks"
+                          :key="fi"
+                          type="button"
+                          @click="appendToComment(ans, fb)"
+                          class="w-full text-left px-3 py-2.5 text-xs text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 border-b border-slate-100 last:border-0 transition leading-relaxed"
+                        >{{ fb }}</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <textarea
                   :id="`comment-${index}`"
                   v-model="ans.teacherComment"
-                  type="text"
+                  rows="2"
                   placeholder="เช่น เข้าใจปัญหาถูกต้อง แต่ขาดการตรวจสอบคำตอบ"
-                  class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
+                  class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-y focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
                 />
               </div>
             </div>
@@ -179,7 +208,7 @@
               v-model="overallFeedback"
               rows="3"
               placeholder="เช่น ทำได้ดีในภาพรวม ควรพัฒนาทักษะการตรวจสอบคำตอบให้มากยิ่งขึ้น"
-              class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
+              class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-y focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
             />
           </div>
 
@@ -240,6 +269,23 @@ function appendQuickFeedback(ans, stepKey, text) {
   ans[stepKey].feedback = current ? `${current}\n${text}` : text
   openDropdown.value = null
 }
+
+function appendToComment(ans, text) {
+  const current = (ans.teacherComment || '').trimEnd()
+  ans.teacherComment = current ? `${current}\n${text}` : text
+  openDropdown.value = null
+}
+
+function appendToOverall(text) {
+  const current = (overallFeedback.value || '').trimEnd()
+  overallFeedback.value = current ? `${current}\n${text}` : text
+  openDropdown.value = null
+}
+
+const allQuickFeedbacks = computed(() => {
+  const all = grades.value.flatMap((g) => g.quickFeedbacks || [])
+  return [...new Set(all)]
+})
 
 function clampScore(ans, step) {
   const val = ans[step.key].scoreGiven

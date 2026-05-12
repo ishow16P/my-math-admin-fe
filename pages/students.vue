@@ -65,53 +65,127 @@
 
       <!-- Modal -->
       <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/30" @click="showModal = false" />
-        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-          <h2 class="text-lg font-semibold text-slate-800 mb-4">
-            {{ editingId ? 'แก้ไขนักเรียน' : 'เพิ่มนักเรียน' }}
-          </h2>
+        <div class="absolute inset-0 bg-black/40" @click="showModal = false" />
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
 
-          <form @submit.prevent="handleSave" class="space-y-4">
-            <div>
-              <label for="s-id" class="block text-sm font-medium text-slate-700 mb-1">รหัสนักเรียน</label>
-              <input id="s-id" v-model="form.studentId" type="text" required :disabled="!!editingId"
-                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm disabled:bg-slate-50" />
-            </div>
-            <div>
-              <label for="s-name" class="block text-sm font-medium text-slate-700 mb-1">ชื่อ-นามสกุล</label>
-              <input id="s-name" v-model="form.name" type="text" required
-                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
-            </div>
-            <div>
-              <label for="s-level" class="block text-sm font-medium text-slate-700 mb-1">ระดับชั้น</label>
-              <select id="s-level" v-model="form.level" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm">
-                <option v-for="lvl in availableLevels" :key="lvl" :value="lvl">{{ levelMap[lvl] }}</option>
-              </select>
-            </div>
-            <div>
-              <label for="s-classroom" class="block text-sm font-medium text-slate-700 mb-1">เลขห้อง</label>
-              <input id="s-classroom" v-model.number="form.classroom" type="number" min="1" placeholder="เช่น 3"
-                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
-            </div>
-            <div>
-              <label for="s-password" class="block text-sm font-medium text-slate-700 mb-1">
-                {{ editingId ? 'รหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)' : 'รหัสผ่าน' }}
-              </label>
-              <input id="s-password" v-model="form.password" type="password" :required="!editingId"
-                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
-            </div>
+          <!-- Header -->
+          <div class="px-6 pt-6 pb-4 border-b border-slate-100 flex-shrink-0">
+            <h2 class="text-base font-semibold text-slate-800">
+              {{ editingId ? 'แก้ไขนักเรียน' : 'เพิ่มนักเรียน' }}
+            </h2>
+          </div>
 
-            <div class="flex justify-end gap-2 pt-2">
-              <button type="button" @click="showModal = false"
-                class="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">
-                ยกเลิก
-              </button>
-              <button type="submit"
-                class="px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-                บันทึก
-              </button>
-            </div>
-          </form>
+          <!-- Body -->
+          <div class="overflow-y-auto flex-1 px-6 py-5">
+            <form id="student-form" @submit.prevent="handleSave" class="space-y-4">
+
+              <!-- รหัสนักเรียน -->
+              <div>
+                <label for="s-id" class="block text-sm font-medium text-slate-700 mb-1.5">
+                  รหัสนักเรียน <span v-if="!editingId" class="text-red-500">*</span>
+                </label>
+                <input
+                  id="s-id"
+                  v-model="form.studentId"
+                  type="text"
+                  :disabled="!!editingId"
+                  placeholder="ระบุรหัสนักเรียน..."
+                  @input="errors.studentId = ''"
+                  :class="[
+                    'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 placeholder:text-slate-300 disabled:bg-slate-50 disabled:text-slate-400',
+                    errors.studentId
+                      ? 'border-red-400 focus:ring-red-300 bg-red-50'
+                      : 'border-slate-200 focus:ring-indigo-300'
+                  ]"
+                />
+                <p v-if="errors.studentId" class="mt-1 text-xs text-red-500">{{ errors.studentId }}</p>
+              </div>
+
+              <!-- ชื่อ-นามสกุล -->
+              <div>
+                <label for="s-name" class="block text-sm font-medium text-slate-700 mb-1.5">
+                  ชื่อ-นามสกุล <span class="text-red-500">*</span>
+                </label>
+                <input
+                  id="s-name"
+                  v-model="form.name"
+                  type="text"
+                  placeholder="ระบุชื่อ-นามสกุล..."
+                  @input="errors.name = ''"
+                  :class="[
+                    'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 placeholder:text-slate-300',
+                    errors.name
+                      ? 'border-red-400 focus:ring-red-300 bg-red-50'
+                      : 'border-slate-200 focus:ring-indigo-300'
+                  ]"
+                />
+                <p v-if="errors.name" class="mt-1 text-xs text-red-500">{{ errors.name }}</p>
+              </div>
+
+              <!-- ระดับชั้น -->
+              <div>
+                <label for="s-level" class="block text-sm font-medium text-slate-700 mb-1.5">ระดับชั้น</label>
+                <select
+                  id="s-level"
+                  v-model="form.level"
+                  class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                >
+                  <option v-for="lvl in availableLevels" :key="lvl" :value="lvl">{{ levelMap[lvl] }}</option>
+                </select>
+              </div>
+
+              <!-- เลขห้อง -->
+              <div>
+                <label for="s-classroom" class="block text-sm font-medium text-slate-700 mb-1.5">
+                  เลขห้อง <span class="text-slate-400 font-normal">(ถ้ามี)</span>
+                </label>
+                <input
+                  id="s-classroom"
+                  v-model.number="form.classroom"
+                  type="number"
+                  min="1"
+                  placeholder="เช่น 3"
+                  class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
+                />
+              </div>
+
+              <!-- รหัสผ่าน -->
+              <div>
+                <label for="s-password" class="block text-sm font-medium text-slate-700 mb-1.5">
+                  {{ editingId ? 'รหัสผ่านใหม่' : 'รหัสผ่าน' }}
+                  <span v-if="!editingId" class="text-red-500">*</span>
+                  <span v-else class="text-slate-400 font-normal">(เว้นว่างถ้าไม่เปลี่ยน)</span>
+                </label>
+                <input
+                  id="s-password"
+                  v-model="form.password"
+                  type="password"
+                  placeholder="ระบุรหัสผ่าน..."
+                  @input="errors.password = ''"
+                  :class="[
+                    'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 placeholder:text-slate-300',
+                    errors.password
+                      ? 'border-red-400 focus:ring-red-300 bg-red-50'
+                      : 'border-slate-200 focus:ring-indigo-300'
+                  ]"
+                />
+                <p v-if="errors.password" class="mt-1 text-xs text-red-500">{{ errors.password }}</p>
+              </div>
+
+            </form>
+          </div>
+
+          <!-- Footer -->
+          <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2 flex-shrink-0">
+            <button type="button" @click="showModal = false"
+              class="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+              ยกเลิก
+            </button>
+            <button type="submit" form="student-form"
+              class="px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition">
+              บันทึก
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -138,6 +212,14 @@ const filterLevel = ref('all')
 const showModal = ref(false)
 const editingId = ref(null)
 const form = reactive({ studentId: '', name: '', level: 'm1', classroom: null, password: '' })
+const errors = reactive({ studentId: '', name: '', password: '' })
+
+function validate() {
+  errors.studentId = (!editingId.value && !form.studentId.trim()) ? 'กรุณาระบุรหัสนักเรียน' : ''
+  errors.name = form.name.trim() ? '' : 'กรุณาระบุชื่อ-นามสกุล'
+  errors.password = (!editingId.value && !form.password) ? 'กรุณาระบุรหัสผ่าน' : ''
+  return !errors.studentId && !errors.name && !errors.password
+}
 
 const availableLevels = computed(() => {
   if (auth.isSuperAdmin) return ['m1', 'm2', 'm3']
@@ -168,10 +250,14 @@ function openModal(s = null) {
     form.classroom = null
     form.password = ''
   }
+  errors.studentId = ''
+  errors.name = ''
+  errors.password = ''
   showModal.value = true
 }
 
 async function handleSave() {
+  if (!validate()) return
   try {
     const body = { ...form }
     if (editingId.value && !body.password) delete body.password

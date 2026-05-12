@@ -111,36 +111,63 @@
                 <p v-if="errors.problemText" class="mt-1 text-xs text-red-500">{{ errors.problemText }}</p>
               </div>
 
-              <!-- URL รูปภาพ -->
+              <!-- รูปภาพประกอบ -->
               <div>
-                <label for="q-image-url" class="block text-sm font-medium text-slate-700 mb-1.5">
-                  URL รูปภาพประกอบ
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                  รูปภาพประกอบ
                   <span class="text-slate-400 font-normal">(ถ้ามี)</span>
                 </label>
-                <input id="q-image-url" v-model="form.problemImageUrl" type="text"
-                  placeholder="https://..."
-                  class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300" />
+
+                <!-- Preview -->
+                <div v-if="form.problemImageUrl" class="mb-2 relative inline-block">
+                  <img :src="form.problemImageUrl" alt="รูปภาพประกอบ" class="max-h-40 rounded-lg border border-slate-200 object-contain" />
+                  <button
+                    type="button"
+                    @click="form.problemImageUrl = ''"
+                    class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition"
+                  >
+                    <X :size="11" />
+                  </button>
+                </div>
+
+                <!-- Upload button -->
+                <div>
+                  <label
+                    :class="[
+                      'inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer transition',
+                      imageUploading
+                        ? 'border-slate-200 text-slate-400 bg-slate-50 cursor-not-allowed'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-indigo-300 hover:text-indigo-600'
+                    ]"
+                  >
+                    <Loader2 v-if="imageUploading" :size="14" class="animate-spin" />
+                    <ImageIcon v-else :size="14" />
+                    {{ imageUploading ? 'กำลังอัปโหลด...' : form.problemImageUrl ? 'เปลี่ยนรูป' : 'อัปโหลดรูปภาพ' }}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      class="hidden"
+                      :disabled="imageUploading"
+                      @change="handleImageUpload"
+                    />
+                  </label>
+                  <span class="ml-2 text-xs text-slate-400">ไฟล์ไม่เกิน 5MB</span>
+                </div>
               </div>
 
               <!-- เฉลย -->
               <div>
                 <label for="q-solution" class="block text-sm font-medium text-slate-700 mb-1.5">
-                  แนวทางเฉลย <span class="text-red-500">*</span>
+                  แนวทางเฉลย
+                  <span class="text-slate-400 font-normal">(ถ้ามี)</span>
                 </label>
                 <textarea
                   id="q-solution"
                   v-model="form.referenceSolution"
                   rows="2"
                   placeholder="ระบุแนวทางการเฉลย..."
-                  @input="errors.referenceSolution = ''"
-                  :class="[
-                    'w-full px-3 py-2 border rounded-lg text-sm resize-none focus:outline-none focus:ring-1 placeholder:text-slate-300',
-                    errors.referenceSolution
-                      ? 'border-red-400 focus:ring-red-300 bg-red-50'
-                      : 'border-slate-200 focus:ring-indigo-300'
-                  ]"
+                  class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
                 />
-                <p v-if="errors.referenceSolution" class="mt-1 text-xs text-red-500">{{ errors.referenceSolution }}</p>
               </div>
 
               <!-- คำตอบ -->
@@ -154,11 +181,12 @@
                   class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300" />
               </div>
 
-              <!-- คำแนะนำสำเร็จรูป -->
+              <!-- ข้อเสนอแนะ -->
               <div class="pt-1">
                 <div class="flex items-start justify-between mb-3">
-                  <div>
-                    <div class="text-sm font-medium text-slate-700">คำแนะนำ</div>
+                  <div class="flex items-baseline gap-2">
+                    <span class="text-sm font-medium text-slate-700">ข้อเสนอแนะ</span>
+                    <span class="text-xs text-slate-400">(ข้อเสนอแนะที่ใช้งานบ่อย)</span>
                   </div>
                   <span v-if="form.quickFeedbacks.length > 0" class="text-xs text-slate-400 mt-0.5">{{ form.quickFeedbacks.length }} รายการ</span>
                 </div>
@@ -187,7 +215,7 @@
                   <input
                     v-model="newFeedbackText"
                     type="text"
-                    placeholder="พิมพ์คำแนะนำที่ต้องการเพิ่ม..."
+                    placeholder="พิมพ์ข้อเสนอแนะที่ต้องการเพิ่ม..."
                     class="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
                     @keydown.enter.prevent="addQuickFeedback"
                   />
@@ -223,7 +251,7 @@
 </template>
 
 <script setup>
-import { Plus, Pencil, Trash2, X } from 'lucide-vue-next'
+import { Plus, Pencil, Trash2, X, ImageIcon, Loader2 } from 'lucide-vue-next'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
 import { useConfirm } from '~/composables/useConfirm'
@@ -250,12 +278,29 @@ const form = reactive({
   quickFeedbacks: [],
 })
 const newFeedbackText = ref('')
-const errors = reactive({ problemText: '', referenceSolution: '' })
+const imageUploading = ref(false)
+const errors = reactive({ problemText: '' })
 
 function validate() {
   errors.problemText = form.problemText.trim() ? '' : 'กรุณาระบุข้อความโจทย์'
-  errors.referenceSolution = form.referenceSolution.trim() ? '' : 'กรุณาระบุแนวทางเฉลย'
-  return !errors.problemText && !errors.referenceSolution
+  return !errors.problemText
+}
+
+async function handleImageUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  imageUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('image', file)
+    const data = await apiFetch('/upload/question-image', { method: 'POST', body: fd })
+    form.problemImageUrl = data.url
+  } catch (e) {
+    toastError(e?.data?.message || 'อัปโหลดรูปไม่สำเร็จ')
+  } finally {
+    imageUploading.value = false
+    event.target.value = ''
+  }
 }
 
 function addQuickFeedback() {
@@ -302,18 +347,19 @@ function openModal(q = null) {
   }
   newFeedbackText.value = ''
   errors.problemText = ''
-  errors.referenceSolution = ''
+  imageUploading.value = false
   showModal.value = true
 }
 
 async function handleSave() {
   if (!validate()) return
   try {
+    const body = { ...form, quickFeedbacks: [...form.quickFeedbacks] }
     if (editingId.value) {
-      await apiFetch(`/questions/${editingId.value}`, { method: 'PUT', body: { ...form } })
+      await apiFetch(`/questions/${editingId.value}`, { method: 'PUT', body })
       toastSuccess('แก้ไขข้อสอบเรียบร้อยแล้ว')
     } else {
-      await apiFetch('/questions', { method: 'POST', body: { ...form } })
+      await apiFetch('/questions', { method: 'POST', body })
       toastSuccess('เพิ่มข้อสอบเรียบร้อยแล้ว')
     }
     showModal.value = false
