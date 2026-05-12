@@ -86,10 +86,12 @@
 
 <script setup>
 import { useApi } from "~/composables/useApi";
+import { useToast } from "~/composables/useToast";
 
 definePageMeta({ middleware: "auth", layout: false });
 
 const { apiFetch } = useApi();
+const { error: toastError } = useToast();
 const levelMap = { m1: "ม.1", m2: "ม.2", m3: "ม.3" };
 const statusLabel = { all: "ทั้งหมด", submitted: "รอตรวจ", graded: "ตรวจแล้ว" };
 
@@ -115,6 +117,10 @@ function formatDate(d) {
 }
 
 onMounted(async () => {
-  submissions.value = await apiFetch("/submissions");
+  try {
+    submissions.value = await apiFetch("/submissions");
+  } catch (e) {
+    toastError(e?.data?.message || "ไม่สามารถโหลดรายการข้อสอบได้");
+  }
 });
 </script>

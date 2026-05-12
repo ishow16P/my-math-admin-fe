@@ -289,6 +289,11 @@ function validate() {
 async function handleImageUpload(event) {
   const file = event.target.files[0]
   if (!file) return
+  if (file.size > 5 * 1024 * 1024) {
+    toastError('ไฟล์ใหญ่เกิน 5MB กรุณาเลือกไฟล์ขนาดเล็กกว่านี้')
+    event.target.value = ''
+    return
+  }
   imageUploading.value = true
   try {
     const fd = new FormData()

@@ -170,20 +170,13 @@ async function loadScores() {
 }
 
 async function exportCSV() {
-  const config = useRuntimeConfig();
   const params = new URLSearchParams({ level: filterLevel.value });
   if (filterClassroom.value) params.append("classroom", filterClassroom.value);
 
   try {
-    const response = await fetch(
-      `${config.public.apiBase}/analytics/classroom/export?${params}`,
-      { headers: { Authorization: `Bearer ${auth.token}` } }
-    );
-    if (!response.ok) {
-      toastError("ไม่สามารถ export ได้ กรุณาลองใหม่");
-      return;
-    }
-    const blob = await response.blob();
+    const blob = await apiFetch(`/analytics/classroom/export?${params}`, {
+      responseType: "blob",
+    });
     const levelLabel = levelMap[filterLevel.value] || filterLevel.value;
     const classroomSuffix = filterClassroom.value ? `-ห้อง${filterClassroom.value}` : "";
     const filename = `ข้อมูลคะแนน-${levelLabel}${classroomSuffix}.csv`;

@@ -41,7 +41,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     try {
       return await $fetch(url, options)
     } catch (error) {
-      if (error?.status !== 401 && error?.status !== 403) throw error
+      if (error?.status !== 401) throw error
       if (!import.meta.client) throw error
 
       const auth = useAdminAuthStore(nuxtApp.$pinia)

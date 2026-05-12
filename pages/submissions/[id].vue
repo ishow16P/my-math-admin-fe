@@ -276,12 +276,6 @@ function appendToComment(ans, text) {
   openDropdown.value = null
 }
 
-function appendToOverall(text) {
-  const current = (overallFeedback.value || '').trimEnd()
-  overallFeedback.value = current ? `${current}\n${text}` : text
-  openDropdown.value = null
-}
-
 const allQuickFeedbacks = computed(() => {
   const all = grades.value.flatMap((g) => g.quickFeedbacks || [])
   return [...new Set(all)]
@@ -321,7 +315,7 @@ onMounted(async () => {
       teacherComment: a.teacherComment || '',
     }))
   } catch (e) {
-    console.error(e)
+    toastError(e?.data?.message || "ไม่สามารถโหลดข้อมูลการส่งได้")
   } finally {
     loading.value = false
   }

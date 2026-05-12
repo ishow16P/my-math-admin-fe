@@ -256,7 +256,9 @@ async function loadStudents() {
     students.value = await apiFetch(`/students?${params}`);
     selectedStudentId.value = "";
     progress.value = null;
-  } catch {}
+  } catch (e) {
+    toastError(e?.data?.message || "ไม่สามารถโหลดรายชื่อนักเรียนได้");
+  }
 }
 
 async function loadProgress() {
