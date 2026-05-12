@@ -26,9 +26,13 @@
       </div>
 
       <!-- Questions List -->
-      <div class="space-y-3">
+      <div v-if="loading" class="flex justify-center py-12">
+        <Loader2 :size="24" class="animate-spin text-indigo-400" />
+      </div>
+
+      <div v-else class="space-y-3">
         <div
-          v-for="q in filteredQuestions"
+          v-for="q in questions"
           :key="q._id"
           class="bg-white rounded-xl border border-slate-200 p-5"
         >
@@ -60,9 +64,10 @@
           </div>
         </div>
 
-        <div v-if="filteredQuestions.length === 0" class="py-16 text-center text-slate-400 text-sm">
+        <div v-if="questions.length === 0" class="py-16 text-center text-slate-400 text-sm">
           ยังไม่มีข้อสอบในระดับนี้
         </div>
+        <PaginationBar v-if="total > 0" v-model="currentPage" :total="total" />
       </div>
 
       <!-- Modal -->
@@ -252,6 +257,7 @@
 
 <script setup>
 import { Plus, Pencil, Trash2, X, ImageIcon, Loader2 } from 'lucide-vue-next'
+
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
 import { useConfirm } from '~/composables/useConfirm'
@@ -265,8 +271,12 @@ const { confirm } = useConfirm()
 const auth = useAdminAuthStore()
 const levelMap = { m1: 'ม.1', m2: 'ม.2', m3: 'ม.3' }
 
+const PER_PAGE = 10
 const questions = ref([])
+const total = ref(0)
+const loading = ref(false)
 const filterLevel = ref('all')
+const currentPage = ref(1)
 const showModal = ref(false)
 const editingId = ref(null)
 const form = reactive({
@@ -324,13 +334,6 @@ const availableLevels = computed(() => {
   return auth.managedLevels || []
 })
 
-const filteredQuestions = computed(() => {
-  const byLevel = filterLevel.value === 'all' ? questions.value : questions.value.filter((q) => q.level === filterLevel.value)
-  if (!auth.isSuperAdmin && auth.managedLevels?.length > 0) {
-    return byLevel.filter((q) => auth.managedLevels.includes(q.level))
-  }
-  return byLevel
-})
 
 function openModal(q = null) {
   if (q) {
@@ -387,8 +390,30 @@ async function handleDelete(id) {
 }
 
 async function loadQuestions() {
-  questions.value = await apiFetch('/questions')
+  loading.value = true
+  try {
+    const params = new URLSearchParams({ page: currentPage.value, limit: PER_PAGE })
+    if (filterLevel.value !== 'all') params.append('level', filterLevel.value)
+    const res = await apiFetch(`/questions?${params}`)
+    questions.value = res.data
+    total.value = res.pagination.total
+  } catch (e) {
+    toastError(e?.data?.message || 'ไม่สามารถโหลดข้อสอบได้')
+  } finally {
+    loading.value = false
+  }
 }
+
+function resetAndLoad() {
+  if (currentPage.value !== 1) {
+    currentPage.value = 1
+  } else {
+    loadQuestions()
+  }
+}
+
+watch(currentPage, loadQuestions)
+watch(filterLevel, resetAndLoad)
 
 onMounted(loadQuestions)
 </script>

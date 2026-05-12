@@ -13,16 +13,27 @@
       </div>
 
       <!-- Filter -->
-      <div class="flex gap-2 mb-4 flex-wrap">
-        <button
-          v-for="lvl in ['all', ...availableLevels]"
-          :key="lvl"
-          @click="filterLevel = lvl"
-          class="px-3 py-1.5 rounded-lg text-sm font-medium transition"
-          :class="filterLevel === lvl ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
-        >
-          {{ lvl === 'all' ? 'ทั้งหมด' : levelMap[lvl] }}
-        </button>
+      <div class="flex flex-col sm:flex-row gap-2 mb-4">
+        <div class="relative">
+          <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="ค้นหารหัสหรือชื่อนักเรียน..."
+            class="w-full sm:w-56 pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-300 placeholder:text-slate-300"
+          />
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button
+            v-for="lvl in ['all', ...availableLevels]"
+            :key="lvl"
+            @click="filterLevel = lvl"
+            class="px-3 py-1.5 rounded-lg text-sm font-medium transition"
+            :class="filterLevel === lvl ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
+          >
+            {{ lvl === 'all' ? 'ทั้งหมด' : levelMap[lvl] }}
+          </button>
+        </div>
       </div>
 
       <!-- Table -->
@@ -38,7 +49,12 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="s in filteredStudents" :key="s._id" class="hover:bg-slate-50">
+            <tr v-if="loading">
+              <td colspan="5" class="px-4 py-8 text-center">
+                <Loader2 :size="20" class="animate-spin text-indigo-400 mx-auto" />
+              </td>
+            </tr>
+            <tr v-for="s in students" :key="s._id" class="hover:bg-slate-50">
               <td class="px-4 py-3 font-mono text-slate-600">{{ s.studentId }}</td>
               <td class="px-4 py-3 text-slate-800">{{ s.name }}</td>
               <td class="px-4 py-3">
@@ -58,8 +74,11 @@
             </tr>
           </tbody>
         </table>
-        <div v-if="filteredStudents.length === 0" class="p-8 text-center text-slate-400">
+        <div v-if="!loading && students.length === 0" class="p-8 text-center text-slate-400">
           ไม่พบนักเรียน
+        </div>
+        <div v-if="total > 0" class="border-t border-slate-100 px-4">
+          <PaginationBar v-model="currentPage" :total="total" />
         </div>
       </div>
 
@@ -193,7 +212,7 @@
 </template>
 
 <script setup>
-import { Plus, Pencil, Trash2 } from 'lucide-vue-next'
+import { Plus, Pencil, Trash2, Search, Loader2 } from 'lucide-vue-next'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
 import { useConfirm } from '~/composables/useConfirm'
@@ -207,8 +226,13 @@ const { confirm } = useConfirm()
 const auth = useAdminAuthStore()
 const levelMap = { m1: 'ม.1', m2: 'ม.2', m3: 'ม.3' }
 
+const PER_PAGE = 10
 const students = ref([])
+const total = ref(0)
+const loading = ref(false)
 const filterLevel = ref('all')
+const searchQuery = ref('')
+const currentPage = ref(1)
 const showModal = ref(false)
 const editingId = ref(null)
 const form = reactive({ studentId: '', name: '', level: 'm1', classroom: null, password: '' })
@@ -226,13 +250,6 @@ const availableLevels = computed(() => {
   return auth.managedLevels || []
 })
 
-const filteredStudents = computed(() => {
-  const byLevel = filterLevel.value === 'all' ? students.value : students.value.filter((s) => s.level === filterLevel.value)
-  if (!auth.isSuperAdmin && auth.managedLevels?.length > 0) {
-    return byLevel.filter((s) => auth.managedLevels.includes(s.level))
-  }
-  return byLevel
-})
 
 function openModal(s = null) {
   if (s) {
@@ -288,8 +305,38 @@ async function handleDelete(id) {
 }
 
 async function loadStudents() {
-  students.value = await apiFetch('/students')
+  loading.value = true
+  try {
+    const params = new URLSearchParams({ page: currentPage.value, limit: PER_PAGE })
+    if (filterLevel.value !== 'all') params.append('level', filterLevel.value)
+    const q = searchQuery.value.trim()
+    if (q) params.append('search', q)
+    const res = await apiFetch(`/students?${params}`)
+    students.value = res.data
+    total.value = res.pagination.total
+  } catch (e) {
+    toastError(e?.data?.message || 'ไม่สามารถโหลดข้อมูลนักเรียนได้')
+  } finally {
+    loading.value = false
+  }
 }
+
+function resetAndLoad() {
+  if (currentPage.value !== 1) {
+    currentPage.value = 1
+  } else {
+    loadStudents()
+  }
+}
+
+watch(currentPage, loadStudents)
+watch(filterLevel, resetAndLoad)
+
+let searchTimer = null
+watch(searchQuery, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(resetAndLoad, 300)
+})
 
 onMounted(loadStudents)
 </script>
