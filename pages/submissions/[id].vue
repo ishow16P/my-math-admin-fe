@@ -110,7 +110,7 @@
                         <label :for="`feedback-${index}-${step.key}`" class="text-xs font-medium text-slate-500">
                           ข้อเสนอแนะขั้นที่ {{ step.key.replace('step', '') }}
                         </label>
-                        <div v-if="ans.quickFeedbacks?.length > 0" class="relative">
+                        <div v-if="ans.stepFeedbacks?.[step.key]?.length > 0" class="relative">
                           <button
                             type="button"
                             @click.stop="toggleDropdown(`${index}-${step.key}`)"
@@ -132,7 +132,7 @@
                             <div class="px-3 py-2 bg-slate-50 border-b border-slate-100 text-xs font-medium text-slate-500">ข้อเสนอแนะที่ใช้งานบ่อย</div>
                             <div class="max-h-48 overflow-y-auto">
                               <button
-                                v-for="(fb, fi) in ans.quickFeedbacks"
+                                v-for="(fb, fi) in ans.stepFeedbacks[step.key]"
                                 :key="fi"
                                 type="button"
                                 @click="appendQuickFeedback(ans, step.key, fb)"
@@ -160,7 +160,7 @@
               <div class="pt-1">
                 <div class="flex items-center justify-between mb-1.5">
                   <label :for="`comment-${index}`" class="text-xs font-medium text-slate-500">ข้อเสนอแนะภาพรวมต่อข้อนี้</label>
-                  <div v-if="ans.quickFeedbacks?.length > 0" class="relative">
+                  <div v-if="allStepFeedbacks(ans).length > 0" class="relative">
                     <button
                       type="button"
                       @click.stop="toggleDropdown(`${index}-comment`)"
@@ -178,7 +178,7 @@
                       <div class="px-3 py-2 bg-slate-50 border-b border-slate-100 text-xs font-medium text-slate-500">ข้อเสนอแนะที่ใช้งานบ่อย</div>
                       <div class="max-h-48 overflow-y-auto">
                         <button
-                          v-for="(fb, fi) in ans.quickFeedbacks"
+                          v-for="(fb, fi) in allStepFeedbacks(ans)"
                           :key="fi"
                           type="button"
                           @click="appendToComment(ans, fb)"
@@ -276,10 +276,10 @@ function appendToComment(ans, text) {
   openDropdown.value = null
 }
 
-const allQuickFeedbacks = computed(() => {
-  const all = grades.value.flatMap((g) => g.quickFeedbacks || [])
-  return [...new Set(all)]
-})
+function allStepFeedbacks(ans) {
+  const sf = ans.stepFeedbacks || {}
+  return [...new Set(['step1', 'step2', 'step3', 'step4'].flatMap((s) => sf[s] || []))]
+}
 
 function clampScore(ans, step) {
   const val = ans[step.key].scoreGiven
@@ -307,7 +307,7 @@ onMounted(async () => {
       questionId: a.questionId,
       problemSnapshot: a.problemSnapshot,
       problemImageSnapshot: a.problemImageSnapshot || '',
-      quickFeedbacks: a.quickFeedbacks || [],
+      stepFeedbacks: a.stepFeedbacks || {},
       step1: { ...(a.step1 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step1Score || 0, feedback: a.step1Feedback || '' },
       step2: { ...(a.step2 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step2Score || 0, feedback: a.step2Feedback || '' },
       step3: { ...(a.step3 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step3Score || 0, feedback: a.step3Feedback || '' },

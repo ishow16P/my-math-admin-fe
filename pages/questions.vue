@@ -186,52 +186,53 @@
                   class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300" />
               </div>
 
-              <!-- ข้อเสนอแนะ -->
-              <div class="pt-1">
-                <div class="flex items-start justify-between mb-3">
-                  <div class="flex items-baseline gap-2">
-                    <span class="text-sm font-medium text-slate-700">ข้อเสนอแนะ</span>
-                    <span class="text-xs text-slate-400">(ข้อเสนอแนะที่ใช้งานบ่อย)</span>
+              <!-- ข้อเสนอแนะรายขั้น -->
+              <div class="pt-1 space-y-4">
+                <p class="text-sm font-medium text-slate-700">ข้อเสนอแนะรายขั้น
+                  <span class="text-xs text-slate-400 font-normal">(ที่ใช้งานบ่อย)</span>
+                </p>
+                <div v-for="step in stepList" :key="step.key" class="border border-slate-200 rounded-lg overflow-hidden">
+                  <!-- Step Header -->
+                  <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                    <span class="text-xs font-medium text-slate-600">{{ step.label }}</span>
+                    <span v-if="form.stepFeedbacks[step.key].length > 0" class="text-xs text-slate-400">{{ form.stepFeedbacks[step.key].length }} รายการ</span>
                   </div>
-                  <span v-if="form.quickFeedbacks.length > 0" class="text-xs text-slate-400 mt-0.5">{{ form.quickFeedbacks.length }} รายการ</span>
-                </div>
-
-                <!-- Existing feedbacks -->
-                <div v-if="form.quickFeedbacks.length > 0" class="border border-slate-200 rounded-lg overflow-hidden mb-3">
-                  <div
-                    v-for="(fb, idx) in form.quickFeedbacks"
-                    :key="idx"
-                    class="flex items-center gap-3 px-3 py-2.5 border-b border-slate-100 last:border-0 hover:bg-slate-50 group"
-                  >
-                    <span class="text-xs text-slate-400 w-4 flex-shrink-0 text-center">{{ idx + 1 }}</span>
-                    <span class="flex-1 text-sm text-slate-700 leading-relaxed">{{ fb }}</span>
+                  <!-- Feedback list -->
+                  <div v-if="form.stepFeedbacks[step.key].length > 0">
+                    <div
+                      v-for="(fb, idx) in form.stepFeedbacks[step.key]"
+                      :key="idx"
+                      class="flex items-center gap-3 px-3 py-2 border-b border-slate-100 last:border-0 hover:bg-slate-50 group"
+                    >
+                      <span class="text-xs text-slate-400 w-4 flex-shrink-0 text-center">{{ idx + 1 }}</span>
+                      <span class="flex-1 text-sm text-slate-700 leading-relaxed">{{ fb }}</span>
+                      <button
+                        type="button"
+                        @click="removeStepFeedback(step.key, idx)"
+                        class="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 transition flex-shrink-0"
+                      >
+                        <X :size="13" class="text-red-400" />
+                      </button>
+                    </div>
+                  </div>
+                  <!-- Add input -->
+                  <div class="flex gap-2 p-2">
+                    <input
+                      v-model="newFeedbackTexts[step.key]"
+                      type="text"
+                      placeholder="พิมพ์ข้อเสนอแนะ..."
+                      class="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
+                      @keydown.enter.prevent="addStepFeedback(step.key)"
+                    />
                     <button
                       type="button"
-                      @click="removeQuickFeedback(idx)"
-                      class="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 transition flex-shrink-0"
+                      @click="addStepFeedback(step.key)"
+                      class="px-3 py-1.5 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition flex items-center gap-1 flex-shrink-0"
                     >
-                      <X :size="13" class="text-red-400" />
+                      <Plus :size="13" />
+                      เพิ่ม
                     </button>
                   </div>
-                </div>
-
-                <!-- Add new feedback -->
-                <div class="flex gap-2">
-                  <input
-                    v-model="newFeedbackText"
-                    type="text"
-                    placeholder="พิมพ์ข้อเสนอแนะที่ต้องการเพิ่ม..."
-                    class="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
-                    @keydown.enter.prevent="addQuickFeedback"
-                  />
-                  <button
-                    type="button"
-                    @click="addQuickFeedback"
-                    class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition flex items-center gap-1.5 flex-shrink-0"
-                  >
-                    <Plus :size="14" />
-                    เพิ่ม
-                  </button>
                 </div>
               </div>
 
@@ -279,15 +280,24 @@ const filterLevel = ref('all')
 const currentPage = ref(1)
 const showModal = ref(false)
 const editingId = ref(null)
+const stepList = [
+  { key: 'step1', label: 'ขั้นที่ 1 — ทำความเข้าใจปัญหา' },
+  { key: 'step2', label: 'ขั้นที่ 2 — วางแผนแก้ปัญหา' },
+  { key: 'step3', label: 'ขั้นที่ 3 — ดำเนินการตามแผน' },
+  { key: 'step4', label: 'ขั้นที่ 4 — ตรวจสอบ' },
+]
+
+const emptyStepFeedbacks = () => ({ step1: [], step2: [], step3: [], step4: [] })
+
 const form = reactive({
   level: 'm1',
   problemText: '',
   problemImageUrl: '',
   referenceSolution: '',
   answer: '',
-  quickFeedbacks: [],
+  stepFeedbacks: emptyStepFeedbacks(),
 })
-const newFeedbackText = ref('')
+const newFeedbackTexts = reactive({ step1: '', step2: '', step3: '', step4: '' })
 const imageUploading = ref(false)
 const errors = reactive({ problemText: '' })
 
@@ -318,15 +328,15 @@ async function handleImageUpload(event) {
   }
 }
 
-function addQuickFeedback() {
-  const text = newFeedbackText.value.trim()
+function addStepFeedback(step) {
+  const text = newFeedbackTexts[step].trim()
   if (!text) return
-  form.quickFeedbacks.push(text)
-  newFeedbackText.value = ''
+  form.stepFeedbacks[step].push(text)
+  newFeedbackTexts[step] = ''
 }
 
-function removeQuickFeedback(index) {
-  form.quickFeedbacks.splice(index, 1)
+function removeStepFeedback(step, index) {
+  form.stepFeedbacks[step].splice(index, 1)
 }
 
 const availableLevels = computed(() => {
@@ -343,7 +353,13 @@ function openModal(q = null) {
     form.problemImageUrl = q.problemImageUrl || ''
     form.referenceSolution = q.referenceSolution
     form.answer = q.answer || ''
-    form.quickFeedbacks = [...(q.quickFeedbacks || [])]
+    const sf = q.stepFeedbacks || {}
+    form.stepFeedbacks = {
+      step1: [...(sf.step1 || [])],
+      step2: [...(sf.step2 || [])],
+      step3: [...(sf.step3 || [])],
+      step4: [...(sf.step4 || [])],
+    }
   } else {
     editingId.value = null
     form.level = availableLevels.value[0] || 'm1'
@@ -351,9 +367,9 @@ function openModal(q = null) {
     form.problemImageUrl = ''
     form.referenceSolution = ''
     form.answer = ''
-    form.quickFeedbacks = []
+    form.stepFeedbacks = emptyStepFeedbacks()
   }
-  newFeedbackText.value = ''
+  Object.assign(newFeedbackTexts, { step1: '', step2: '', step3: '', step4: '' })
   errors.problemText = ''
   imageUploading.value = false
   showModal.value = true
@@ -362,7 +378,15 @@ function openModal(q = null) {
 async function handleSave() {
   if (!validate()) return
   try {
-    const body = { ...form, quickFeedbacks: [...form.quickFeedbacks] }
+    const body = {
+      ...form,
+      stepFeedbacks: {
+        step1: [...form.stepFeedbacks.step1],
+        step2: [...form.stepFeedbacks.step2],
+        step3: [...form.stepFeedbacks.step3],
+        step4: [...form.stepFeedbacks.step4],
+      }
+    }
     if (editingId.value) {
       await apiFetch(`/questions/${editingId.value}`, { method: 'PUT', body })
       toastSuccess('แก้ไขข้อสอบเรียบร้อยแล้ว')
