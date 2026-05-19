@@ -49,14 +49,14 @@
                 <!-- Status badge -->
                 <template v-if="session.type === 'pre_test' || session.type === 'post_test'">
                   <span class="text-xs px-2 py-0.5 rounded-full"
-                    :class="selectedPrePostIds.length === 2 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'">
-                    {{ selectedPrePostIds.length === 2 ? '✓ กำหนดข้อแล้ว' : 'ยังไม่กำหนดข้อ' }}
+                    :class="savedPrePostIds.length === 2 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'">
+                    {{ savedPrePostIds.length === 2 ? 'กำหนดข้อแล้ว' : 'ยังไม่กำหนดข้อ' }}
                   </span>
                 </template>
                 <template v-else>
-                  <span v-if="getSessionQuestionId(session.type)"
+                  <span v-if="savedSessionQuestions[session.type]"
                     class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                    ✓ กำหนดข้อแล้ว
+                    กำหนดข้อแล้ว
                   </span>
                   <span v-else class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">
                     สุ่มอัตโนมัติ
@@ -285,11 +285,11 @@ const { success: toastSuccess, error: toastError } = useToast()
 const levelMap = { m1: 'ม.1', m2: 'ม.2', m3: 'ม.3' }
 
 const SESSIONS = [
-  { type: 'pre_test',   label: 'ทดสอบก่อนเรียน',         questionCount: 2, durationLabel: '40 นาที', color: 'bg-blue-100 text-blue-600',      icon: ClipboardList },
-  { type: 'in_class_1', label: 'ทดสอบท้ายคาบ ครั้งที่ 1', questionCount: 1, durationLabel: '20 นาที', color: 'bg-violet-100 text-violet-600',  icon: PenLine },
-  { type: 'in_class_2', label: 'ทดสอบท้ายคาบ ครั้งที่ 2', questionCount: 1, durationLabel: '20 นาที', color: 'bg-purple-100 text-purple-600',  icon: PenLine },
-  { type: 'in_class_3', label: 'ทดสอบท้ายคาบ ครั้งที่ 3', questionCount: 1, durationLabel: '20 นาที', color: 'bg-fuchsia-100 text-fuchsia-600', icon: PenLine },
-  { type: 'post_test',  label: 'ทดสอบหลังเรียน',          questionCount: 2, durationLabel: '40 นาที', color: 'bg-emerald-100 text-emerald-600', icon: FileCheck },
+  { type: 'pre_test',   label: 'แบบทดสอบก่อนเรียน',         questionCount: 2, durationLabel: '40 นาที', color: 'bg-blue-100 text-blue-600',      icon: ClipboardList },
+  { type: 'in_class_1', label: 'แบบทดสอบท้ายคาบ ครั้งที่ 1', questionCount: 1, durationLabel: '20 นาที', color: 'bg-violet-100 text-violet-600',  icon: PenLine },
+  { type: 'in_class_2', label: 'แบบทดสอบท้ายคาบ ครั้งที่ 2', questionCount: 1, durationLabel: '20 นาที', color: 'bg-purple-100 text-purple-600',  icon: PenLine },
+  { type: 'in_class_3', label: 'แบบทดสอบท้ายคาบ ครั้งที่ 3', questionCount: 1, durationLabel: '20 นาที', color: 'bg-fuchsia-100 text-fuchsia-600', icon: PenLine },
+  { type: 'post_test',  label: 'แบบทดสอบหลังเรียน',          questionCount: 2, durationLabel: '40 นาที', color: 'bg-emerald-100 text-emerald-600', icon: FileCheck },
 ]
 
 const availableLevels = computed(() => {
@@ -309,6 +309,10 @@ const questionPool = ref([])
 const localSessions = ref({})
 const selectedPrePostIds = ref([])
 const expandedSessions = ref([])
+
+// สถานะที่บันทึกจริงใน DB แล้ว (ใช้แสดง status badge)
+const savedPrePostIds = ref([])
+const savedSessionQuestions = ref({})
 
 const prePostPool = computed(() =>
   questionPool.value.filter((q) => q.pool === 'pre_post' || q.pool === 'any')
@@ -340,6 +344,12 @@ async function loadConfig() {
     config.value = res.config
     localSessions.value = JSON.parse(JSON.stringify(res.config.sessions))
     selectedPrePostIds.value = (res.config.prePostQuestionIds || []).map((q) => q._id || q)
+    savedPrePostIds.value = [...selectedPrePostIds.value]
+    savedSessionQuestions.value = {
+      in_class_1: res.config.sessions.in_class_1?.questionId?._id || res.config.sessions.in_class_1?.questionId || null,
+      in_class_2: res.config.sessions.in_class_2?.questionId?._id || res.config.sessions.in_class_2?.questionId || null,
+      in_class_3: res.config.sessions.in_class_3?.questionId?._id || res.config.sessions.in_class_3?.questionId || null,
+    }
   } catch (e) {
     toastError(e?.data?.message || 'ไม่สามารถโหลด config ได้')
   } finally {
@@ -409,7 +419,8 @@ async function savePrePostQuestions() {
       method: 'PUT',
       body: { questionIds: selectedPrePostIds.value },
     })
-    toastSuccess('บันทึกข้อสอบ pre/post test เรียบร้อย')
+    savedPrePostIds.value = [...selectedPrePostIds.value]
+    toastSuccess('บันทึกข้อสอบก่อน/หลังเรียนเรียบร้อย')
   } catch (e) {
     toastError(e?.data?.message || 'เกิดข้อผิดพลาด')
   } finally {
@@ -425,6 +436,7 @@ async function saveSessionQuestion(sessionType) {
       method: 'PUT',
       body: { sessionType, questionId },
     })
+    savedSessionQuestions.value[sessionType] = getSessionQuestionId(sessionType)
     toastSuccess('บันทึกข้อสอบเรียบร้อย')
   } catch (e) {
     toastError(e?.data?.message || 'เกิดข้อผิดพลาด')

@@ -23,7 +23,7 @@
             </div>
             <div class="flex items-center gap-3">
               <div class="text-right">
-                <div class="text-2xl font-bold text-indigo-600">{{ computedTotal }}<span class="text-sm font-normal text-slate-400">/30</span></div>
+                <div class="text-2xl font-bold text-indigo-600">{{ computedTotal }}<span class="text-sm font-normal text-slate-400">/{{ grades.length * 10 }}</span></div>
                 <div class="text-xs text-slate-400">คะแนนรวม</div>
               </div>
               <span
@@ -212,7 +212,15 @@
             />
           </div>
 
-          <div class="flex justify-end pb-4">
+          <div class="flex items-center justify-between pb-4">
+            <button
+              type="button"
+              @click="showDeleteModal = true"
+              class="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition"
+            >
+              <Trash2 :size="15" />
+              ลบข้อสอบนี้
+            </button>
             <button
               type="submit"
               :disabled="saving"
@@ -225,11 +233,54 @@
         </form>
       </div>
     </div>
+
+    <!-- Delete Confirm Modal -->
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/40" @click="closeDeleteModal" />
+      <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+            <Trash2 :size="18" class="text-red-600" />
+          </div>
+          <div>
+            <h3 class="font-semibold text-slate-800">ลบข้อสอบนี้?</h3>
+            <p class="text-xs text-slate-400 mt-0.5">การลบไม่สามารถย้อนกลับได้</p>
+          </div>
+        </div>
+        <p class="text-sm text-slate-600 mb-3">พิมพ์ <span class="font-bold text-red-600">ยืนยัน</span> เพื่อดำเนินการ</p>
+        <input
+          v-model="deleteConfirmText"
+          type="text"
+          placeholder="ยืนยัน"
+          class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 mb-4"
+          :class="deleteConfirmText === 'ยืนยัน' ? 'border-red-400 focus:ring-red-300' : 'border-slate-200 focus:ring-indigo-300'"
+          @keydown.enter="handleDelete"
+        />
+        <div class="flex gap-2">
+          <button
+            type="button"
+            @click="closeDeleteModal"
+            class="flex-1 px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="button"
+            @click="handleDelete"
+            :disabled="deleteConfirmText !== 'ยืนยัน' || deleting"
+            class="flex-1 px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition disabled:opacity-40 flex items-center justify-center gap-2"
+          >
+            <Loader2 v-if="deleting" :size="14" class="animate-spin" />
+            ลบ
+          </button>
+        </div>
+      </div>
+    </div>
   </NuxtLayout>
 </template>
 
 <script setup>
-import { CheckCircle2, Loader2, ChevronDown, Zap } from 'lucide-vue-next'
+import { CheckCircle2, Loader2, ChevronDown, Zap, Trash2 } from 'lucide-vue-next'
 import MathDisplay from '~/components/MathDisplay.vue'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
@@ -255,6 +306,27 @@ const saving = ref(false)
 const overallFeedback = ref('')
 const grades = ref([])
 const openDropdown = ref(null)
+const showDeleteModal = ref(false)
+const deleteConfirmText = ref('')
+const deleting = ref(false)
+
+function closeDeleteModal() {
+  showDeleteModal.value = false
+  deleteConfirmText.value = ''
+}
+
+async function handleDelete() {
+  if (deleteConfirmText.value !== 'ยืนยัน') return
+  deleting.value = true
+  try {
+    await apiFetch(`/submissions/${route.params.id}`, { method: 'DELETE' })
+    await router.push('/submissions')
+  } catch (e) {
+    toastError(e?.data?.message || 'เกิดข้อผิดพลาด')
+  } finally {
+    deleting.value = false
+  }
+}
 
 function toggleDropdown(key) {
   openDropdown.value = openDropdown.value === key ? null : key
@@ -345,7 +417,7 @@ async function handleGrade() {
           teacherComment: g.teacherComment,
         })),
         overallFeedback: overallFeedback.value,
-        maxScore: 30,
+        maxScore: grades.value.length * 10,
       },
     })
     toastSuccess('บันทึกการตรวจเรียบร้อยแล้ว!')

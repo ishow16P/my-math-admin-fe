@@ -67,55 +67,59 @@
       >
         <table class="w-full text-sm">
           <thead class="bg-slate-50 text-slate-500">
+            <!-- Row 1: exam type groups -->
+            <tr class="border-b border-slate-200">
+              <th rowspan="2" class="text-left px-4 py-2 font-medium whitespace-nowrap border-r border-slate-200">ลำดับ</th>
+              <th rowspan="2" class="text-left px-4 py-2 font-medium whitespace-nowrap border-r border-slate-200">รหัส</th>
+              <th rowspan="2" class="text-left px-4 py-2 font-medium whitespace-nowrap border-r border-slate-200">ชื่อ-นามสกุล</th>
+              <th rowspan="2" class="text-left px-4 py-2 font-medium whitespace-nowrap border-r border-slate-200">ห้อง</th>
+              <th v-for="et in EXAM_TYPES" :key="et.type"
+                :colspan="et.questionCount"
+                class="text-center px-4 py-2 font-medium whitespace-nowrap border-l border-slate-200">
+                {{ et.label }}
+              </th>
+            </tr>
+            <!-- Row 2: per-question -->
             <tr>
-              <th class="text-left px-4 py-3 font-medium">ลำดับ</th>
-              <th class="text-left px-4 py-3 font-medium">รหัส</th>
-              <th class="text-left px-4 py-3 font-medium">ชื่อ-นามสกุล</th>
-              <th class="text-left px-4 py-3 font-medium">ระดับ</th>
-              <th class="text-left px-4 py-3 font-medium">ห้อง</th>
-              <th class="text-center px-4 py-3 font-medium">สอบ (ครั้ง)</th>
-              <th class="text-center px-4 py-3 font-medium">คะแนนครั้งแรก</th>
-              <th class="text-center px-4 py-3 font-medium">คะแนนล่าสุด</th>
+              <th v-for="col in COLUMNS" :key="`${col.type}-${col.qIndex}`"
+                class="text-center px-3 py-1.5 font-normal text-xs whitespace-nowrap border-l border-slate-100">
+                {{ col.questionCount > 1 ? `ข้อ ${col.qIndex + 1}` : 'คะแนน' }}
+                <span class="text-slate-300">/10</span>
+              </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
             <tr v-for="(s, i) in scores" :key="s._id" class="hover:bg-slate-50">
-              <td class="px-4 py-3 text-slate-400">{{ i + 1 }}</td>
-              <td class="px-4 py-3 font-mono text-slate-600">{{ s.studentId }}</td>
-              <td class="px-4 py-3 text-slate-800">{{ s.name }}</td>
-              <td class="px-4 py-3">
-                <span
-                  class="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700"
-                >
-                  {{ levelMap[s.level] }}
-                </span>
-              </td>
-              <td class="px-4 py-3 text-slate-500">
+              <td class="px-4 py-3 text-slate-400 border-r border-slate-100">{{ i + 1 }}</td>
+              <td class="px-4 py-3 font-mono text-slate-600 border-r border-slate-100">{{ s.studentId }}</td>
+              <td class="px-4 py-3 text-slate-800 border-r border-slate-100">{{ s.name }}</td>
+              <td class="px-4 py-3 text-slate-500 whitespace-nowrap border-r border-slate-100">
                 {{ s.classroom ? `${s.level.replace("m", "")}/${s.classroom}` : "-" }}
               </td>
-              <td class="px-4 py-3 text-center text-slate-600">
-                {{ s.submissions.length }}
-              </td>
-              <td class="px-4 py-3 text-center">
-                <span v-if="s.submissions[0]" class="font-semibold text-slate-700">
-                  {{ s.submissions[0].totalScore }}/{{ s.submissions[0].maxScore }}
-                </span>
-                <span v-else class="text-slate-300">-</span>
-              </td>
-              <td class="px-4 py-3 text-center">
-                <span
-                  v-if="s.submissions.length > 0"
-                  class="font-semibold"
-                  :class="getScoreColor(s)"
-                >
-                  {{ s.submissions[s.submissions.length - 1].totalScore }}/{{
-                    s.submissions[s.submissions.length - 1].maxScore
-                  }}
-                </span>
-                <span v-else class="text-slate-300">-</span>
+              <td v-for="col in COLUMNS" :key="`${col.type}-${col.qIndex}`"
+                class="px-3 py-3 text-center border-l border-slate-100">
+                <template v-if="getQuestionScore(s, col.type, col.qIndex) !== null">
+                  <span class="font-semibold text-indigo-600">{{ getQuestionScore(s, col.type, col.qIndex) }}</span>
+                </template>
+                <span v-else class="text-slate-200">—</span>
               </td>
             </tr>
           </tbody>
+          <!-- Average row -->
+          <tfoot>
+            <tr class="bg-slate-50 border-t-2 border-slate-200">
+              <td class="px-4 py-3 text-xs font-semibold text-slate-500 border-r border-slate-200" colspan="4">
+                คะแนนเฉลี่ย
+              </td>
+              <td v-for="col in COLUMNS" :key="`avg-${col.type}-${col.qIndex}`"
+                class="px-3 py-3 text-center border-l border-slate-100">
+                <template v-if="avgCol(col.type, col.qIndex) !== null">
+                  <span class="font-bold text-slate-700">{{ avgCol(col.type, col.qIndex) }}</span>
+                </template>
+                <span v-else class="text-slate-300">—</span>
+              </td>
+            </tr>
+          </tfoot>
         </table>
       </div>
 
@@ -138,6 +142,43 @@ const { apiFetch } = useApi();
 const { error: toastError } = useToast();
 const auth = useAdminAuthStore();
 const levelMap = { m1: "ม.1", m2: "ม.2", m3: "ม.3" };
+
+const EXAM_TYPES = [
+  { type: "pre_test",   label: "ก่อนเรียน",  questionCount: 2 },
+  { type: "in_class_1", label: "ท้ายคาบ 1", questionCount: 1 },
+  { type: "in_class_2", label: "ท้ายคาบ 2", questionCount: 1 },
+  { type: "in_class_3", label: "ท้ายคาบ 3", questionCount: 1 },
+  { type: "post_test",  label: "หลังเรียน",  questionCount: 2 },
+];
+
+// flatten columns: { type, label, qIndex (0-based), colLabel }
+const COLUMNS = EXAM_TYPES.flatMap((et) =>
+  Array.from({ length: et.questionCount }, (_, i) => ({
+    type: et.type,
+    groupLabel: et.label,
+    questionCount: et.questionCount,
+    qIndex: i,
+    colLabel: et.questionCount > 1 ? `ข้อ ${i + 1}` : et.label,
+  }))
+);
+
+function getSub(student, examType) {
+  return student.submissions.find((s) => s.examType === examType) ?? null;
+}
+
+function getQuestionScore(student, examType, qIndex) {
+  const sub = getSub(student, examType);
+  if (!sub) return null;
+  return sub.answerScores?.[qIndex] ?? null;
+}
+
+function avgCol(examType, qIndex) {
+  const vals = scores.value
+    .map((s) => getQuestionScore(s, examType, qIndex))
+    .filter((v) => v !== null);
+  if (!vals.length) return null;
+  return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
+}
 
 const availableLevels = computed(() => {
   if (auth.isSuperAdmin) return ["m1", "m2", "m3"];
@@ -169,38 +210,59 @@ async function loadScores() {
   }
 }
 
-async function exportCSV() {
-  const params = new URLSearchParams({ level: filterLevel.value });
-  if (filterClassroom.value) params.append("classroom", filterClassroom.value);
+function exportCSV() {
+  const escape = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
 
-  try {
-    const blob = await apiFetch(`/analytics/classroom/export?${params}`, {
-      responseType: "blob",
+  // Header row 1: group labels
+  const h1 = ["ลำดับ", "รหัส", "ชื่อ-นามสกุล", "ห้อง"];
+  EXAM_TYPES.forEach((et) => {
+    h1.push(et.label);
+    for (let i = 1; i < et.questionCount; i++) h1.push("");
+  });
+
+  // Header row 2: per-question labels
+  const h2 = ["", "", "", ""];
+  COLUMNS.forEach((col) => {
+    h2.push(col.questionCount > 1 ? `ข้อ ${col.qIndex + 1}` : "คะแนน");
+  });
+
+  // Data rows
+  const dataRows = scores.value.map((s, i) => {
+    const row = [
+      i + 1,
+      s.studentId,
+      s.name,
+      s.classroom ? `${s.level.replace("m", "")}/${s.classroom}` : "-",
+    ];
+    COLUMNS.forEach((col) => {
+      const v = getQuestionScore(s, col.type, col.qIndex);
+      row.push(v !== null ? v : "");
     });
-    const levelLabel = levelMap[filterLevel.value] || filterLevel.value;
-    const classroomSuffix = filterClassroom.value ? `-ห้อง${filterClassroom.value}` : "";
-    const filename = `ข้อมูลคะแนน-${levelLabel}${classroomSuffix}.csv`;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  } catch {
-    toastError("ไม่สามารถ export ได้ กรุณาลองใหม่");
-  }
+    return row;
+  });
+
+  // Average row
+  const avgRow = ["", "", "", "เฉลี่ย"];
+  COLUMNS.forEach((col) => {
+    const v = avgCol(col.type, col.qIndex);
+    avgRow.push(v !== null ? v : "");
+  });
+
+  const rows = [h1, h2, ...dataRows, avgRow];
+  const csv = "\uFEFF" + rows.map((r) => r.map(escape).join(",")).join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const levelLabel = levelMap[filterLevel.value] || filterLevel.value;
+  const classroomSuffix = filterClassroom.value ? `-ห้อง${filterClassroom.value}` : "";
+  const filename = `คะแนนรายห้อง-${levelLabel}${classroomSuffix}.csv`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
-function getScoreColor(s) {
-  if (!s.submissions.length || !s.submissions[0]) return "text-slate-500";
-  const first = s.submissions[0];
-  const last = s.submissions[s.submissions.length - 1];
-  const firstPct = first.maxScore ? first.totalScore / first.maxScore : 0;
-  const lastPct = last.maxScore ? last.totalScore / last.maxScore : 0;
-  if (lastPct > firstPct) return "text-emerald-600";
-  if (lastPct < firstPct) return "text-red-500";
-  return "text-slate-700";
-}
 </script>

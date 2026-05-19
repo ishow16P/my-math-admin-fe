@@ -31,9 +31,20 @@
               :key="l"
               @click="filterLevel = l"
               class="px-3 py-1.5 rounded-lg text-sm font-medium transition"
-              :class="filterLevel === l ? 'bg-violet-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
+              :class="filterLevel === l ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
             >
               {{ l === "all" ? "ทุกระดับ" : levelMap[l] }}
+            </button>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="et in examTypeOptions"
+              :key="et.value"
+              @click="filterExamType = et.value"
+              class="px-3 py-1.5 rounded-lg text-sm font-medium transition"
+              :class="filterExamType === et.value ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
+            >
+              {{ et.label }}
             </button>
           </div>
         </div>
@@ -53,12 +64,13 @@
         >
           <div class="flex items-center justify-between">
             <div>
-              <div class="font-medium text-slate-800">
-                {{ sub.studentId?.name || "N/A" }}
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-medium text-slate-800">{{ sub.studentId?.name || "N/A" }}</span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">{{ levelMap[sub.level] }}</span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">{{ examTypeMap[sub.examType] || sub.examType }}</span>
               </div>
               <div class="text-xs text-slate-400">
-                {{ sub.studentId?.studentId }} - {{ levelMap[sub.level] }} -
-                {{ formatDate(sub.createdAt) }}
+                {{ sub.studentId?.studentId }} · {{ formatDate(sub.createdAt) }}
               </div>
             </div>
             <div class="flex items-center gap-3">
@@ -66,7 +78,7 @@
                 v-if="sub.status === 'graded'"
                 class="text-lg font-bold text-indigo-600"
               >
-                {{ sub.totalScore }}<span class="text-sm font-normal text-slate-400">/30</span>
+                {{ sub.totalScore }}<span class="text-sm font-normal text-slate-400">/{{ sub.maxScore }}</span>
               </div>
               <span
                 class="px-2.5 py-1 rounded-full text-xs font-medium"
@@ -102,6 +114,21 @@ const { apiFetch } = useApi();
 const { error: toastError } = useToast();
 const levelMap = { m1: "ม.1", m2: "ม.2", m3: "ม.3" };
 const statusLabel = { all: "ทั้งหมด", submitted: "รอตรวจ", graded: "ตรวจแล้ว" };
+const examTypeMap = {
+  pre_test:   "แบบทดสอบก่อนเรียน",
+  in_class_1: "แบบทดสอบท้ายคาบ 1",
+  in_class_2: "แบบทดสอบท้ายคาบ 2",
+  in_class_3: "แบบทดสอบท้ายคาบ 3",
+  post_test:  "แบบทดสอบหลังเรียน",
+};
+const examTypeOptions = [
+  { value: "all",        label: "แบบทดสอบทุกประเภท" },
+  { value: "pre_test",   label: "แบบทดสอบก่อนเรียน" },
+  { value: "in_class_1", label: "แบบทดสอบท้ายคาบ 1" },
+  { value: "in_class_2", label: "แบบทดสอบท้ายคาบ 2" },
+  { value: "in_class_3", label: "แบบทดสอบท้ายคาบ 3" },
+  { value: "post_test",  label: "แบบทดสอบหลังเรียน" },
+];
 
 const PER_PAGE = 10;
 const submissions = ref([]);
@@ -109,6 +136,7 @@ const total = ref(0);
 const loading = ref(false);
 const filterStatus = ref("all");
 const filterLevel = ref("all");
+const filterExamType = ref("all");
 const searchQuery = ref("");
 const currentPage = ref(1);
 
@@ -127,6 +155,7 @@ async function loadSubmissions() {
     const params = new URLSearchParams({ page: currentPage.value, limit: PER_PAGE });
     if (filterStatus.value !== "all") params.append("status", filterStatus.value);
     if (filterLevel.value !== "all") params.append("level", filterLevel.value);
+    if (filterExamType.value !== "all") params.append("examType", filterExamType.value);
     const q = searchQuery.value.trim();
     if (q) params.append("search", q);
     const res = await apiFetch(`/submissions?${params}`);
@@ -148,7 +177,7 @@ function resetAndLoad() {
 }
 
 watch(currentPage, loadSubmissions);
-watch([filterStatus, filterLevel], resetAndLoad);
+watch([filterStatus, filterLevel, filterExamType], resetAndLoad);
 
 let searchTimer = null;
 watch(searchQuery, () => {
