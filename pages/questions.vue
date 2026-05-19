@@ -23,6 +23,16 @@
         >
           {{ lvl === 'all' ? 'ทั้งหมด' : levelMap[lvl] }}
         </button>
+        <div class="w-px bg-slate-200 mx-1" />
+        <button
+          v-for="p in poolOptions"
+          :key="p.value"
+          @click="filterPool = p.value"
+          class="px-3 py-1.5 rounded-lg text-sm font-medium transition"
+          :class="filterPool === p.value ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
+        >
+          {{ p.label }}
+        </button>
       </div>
 
       <!-- Questions List -->
@@ -42,6 +52,9 @@
               <div class="flex items-center gap-2 mb-2">
                 <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
                   {{ levelMap[q.level] }}
+                </span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="poolBadgeClass(q.pool)">
+                  {{ poolLabelMap[q.pool || 'any'] }}
                 </span>
               </div>
               <!-- Problem -->
@@ -86,13 +99,24 @@
           <div class="overflow-y-auto flex-1 px-6 py-5">
             <form id="question-form" @submit.prevent="handleSave" class="space-y-5">
 
-              <!-- ระดับชั้น -->
-              <div>
-                <label for="q-level" class="block text-sm font-medium text-slate-700 mb-1.5">ระดับชั้น</label>
-                <select id="q-level" v-model="form.level" required
-                  class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300">
-                  <option v-for="lvl in availableLevels" :key="lvl" :value="lvl">{{ levelMap[lvl] }}</option>
-                </select>
+              <!-- ระดับชั้น + Pool -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label for="q-level" class="block text-sm font-medium text-slate-700 mb-1.5">ระดับชั้น</label>
+                  <select id="q-level" v-model="form.level" required
+                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                    <option v-for="lvl in availableLevels" :key="lvl" :value="lvl">{{ levelMap[lvl] }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="q-pool" class="block text-sm font-medium text-slate-700 mb-1.5">ประเภทการสอบ</label>
+                  <select id="q-pool" v-model="form.pool"
+                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                    <option value="any">ทุกรอบ</option>
+                    <option value="pre_post">ทดสอบก่อน/หลัง</option>
+                    <option value="in_class">ทดสอบท้ายคาบ</option>
+                  </select>
+                </div>
               </div>
 
               <!-- โจทย์ -->
@@ -277,7 +301,20 @@ const questions = ref([])
 const total = ref(0)
 const loading = ref(false)
 const filterLevel = ref('all')
+const filterPool = ref('all')
 const currentPage = ref(1)
+
+const poolOptions = [
+  { value: 'all', label: 'ทั้งหมด' },
+  { value: 'pre_post', label: 'ทดสอบก่อน/หลัง' },
+  { value: 'in_class', label: 'ทดสอบท้ายคาบ' },
+]
+const poolLabelMap = { pre_post: 'ทดสอบก่อน/หลัง', in_class: 'ทดสอบท้ายคาบ', any: 'ทุกรอบ' }
+function poolBadgeClass(pool) {
+  if (pool === 'pre_post') return 'bg-amber-100 text-amber-700'
+  if (pool === 'in_class') return 'bg-teal-100 text-teal-700'
+  return 'bg-slate-100 text-slate-500'
+}
 const showModal = ref(false)
 const editingId = ref(null)
 const stepList = [
@@ -291,6 +328,7 @@ const emptyStepFeedbacks = () => ({ step1: [], step2: [], step3: [], step4: [] }
 
 const form = reactive({
   level: 'm1',
+  pool: 'any',
   problemText: '',
   problemImageUrl: '',
   referenceSolution: '',
@@ -349,6 +387,7 @@ function openModal(q = null) {
   if (q) {
     editingId.value = q._id
     form.level = q.level
+    form.pool = q.pool || 'any'
     form.problemText = q.problemText
     form.problemImageUrl = q.problemImageUrl || ''
     form.referenceSolution = q.referenceSolution
@@ -363,6 +402,7 @@ function openModal(q = null) {
   } else {
     editingId.value = null
     form.level = availableLevels.value[0] || 'm1'
+    form.pool = 'any'
     form.problemText = ''
     form.problemImageUrl = ''
     form.referenceSolution = ''
@@ -418,6 +458,7 @@ async function loadQuestions() {
   try {
     const params = new URLSearchParams({ page: currentPage.value, limit: PER_PAGE })
     if (filterLevel.value !== 'all') params.append('level', filterLevel.value)
+    if (filterPool.value !== 'all') params.append('pool', filterPool.value)
     const res = await apiFetch(`/questions?${params}`)
     questions.value = res.data
     total.value = res.pagination.total
@@ -438,6 +479,7 @@ function resetAndLoad() {
 
 watch(currentPage, loadQuestions)
 watch(filterLevel, resetAndLoad)
+watch(filterPool, resetAndLoad)
 
 onMounted(loadQuestions)
 </script>

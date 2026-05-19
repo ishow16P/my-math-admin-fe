@@ -82,7 +82,7 @@
 </template>
 
 <script setup>
-import { GraduationCap, LayoutDashboard, FileText, Users, ClipboardCheck, LogOut, Menu, UserCog, TrendingUp, BarChart3 } from 'lucide-vue-next'
+import { GraduationCap, LayoutDashboard, FileText, Users, ClipboardCheck, LogOut, Menu, UserCog, TrendingUp, BarChart3, Settings2 } from 'lucide-vue-next'
 import ToastContainer from '~/components/ToastContainer.vue'
 import ConfirmDialog from '~/components/ConfirmDialog.vue'
 import { useAdminAuthStore } from '~/stores/auth'
@@ -99,10 +99,12 @@ const menuItems = computed(() => {
   const items = [
     { to: '/dashboard', label: 'แดชบอร์ด', icon: LayoutDashboard },
     { to: '/questions', label: 'จัดการข้อสอบ', icon: FileText },
+    { to: '/exam-config', label: 'ตั้งค่าการสอบ', icon: Settings2 },
     { to: '/students', label: 'จัดการนักเรียน', icon: Users },
     { to: '/submissions', label: 'ตรวจข้อสอบ', icon: ClipboardCheck },
     { to: '/progress', label: 'พัฒนาการนักเรียน', icon: TrendingUp },
     { to: '/classroom-scores', label: 'คะแนนรายห้อง', icon: BarChart3 },
+ 
   ]
   if (auth.isSuperAdmin) {
     items.push({ to: '/teachers', label: 'จัดการครู', icon: UserCog })
