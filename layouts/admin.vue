@@ -100,10 +100,10 @@ const menuItems = computed(() => {
     { to: '/dashboard', label: 'แดชบอร์ด', icon: LayoutDashboard },
     { to: '/questions', label: 'จัดการข้อสอบ', icon: FileText },
     { to: '/exam-config', label: 'ตั้งค่าการสอบ', icon: Settings2 },
-    { to: '/students', label: 'จัดการนักเรียน', icon: Users },
     { to: '/submissions', label: 'ตรวจข้อสอบ', icon: ClipboardCheck },
     { to: '/progress', label: 'พัฒนาการนักเรียน', icon: TrendingUp },
     { to: '/classroom-scores', label: 'คะแนนรายห้อง', icon: BarChart3 },
+    { to: '/students', label: 'จัดการนักเรียน', icon: Users },
  
   ]
   if (auth.isSuperAdmin) {

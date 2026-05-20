@@ -58,7 +58,7 @@
               <td class="px-4 py-3 font-mono text-slate-600">{{ s.studentId }}</td>
               <td class="px-4 py-3 text-slate-800">{{ s.name }}</td>
               <td class="px-4 py-3">
-                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="levelBadgeClass[s.level]">
                   {{ levelMap[s.level] }}
                 </span>
               </td>
@@ -225,6 +225,7 @@ const { success: toastSuccess, error: toastError } = useToast()
 const { confirm } = useConfirm()
 const auth = useAdminAuthStore()
 const levelMap = { m1: 'ม.1', m2: 'ม.2', m3: 'ม.3' }
+const levelBadgeClass = { m1: 'bg-indigo-100 text-indigo-700', m2: 'bg-violet-100 text-violet-700', m3: 'bg-orange-100 text-orange-700' }
 
 const PER_PAGE = 10
 const students = ref([])

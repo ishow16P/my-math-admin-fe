@@ -173,7 +173,7 @@
           <table class="w-full text-sm">
             <thead class="bg-slate-50 text-slate-500">
               <tr>
-                <th class="text-left px-4 py-3 font-medium">ครั้งที่</th>
+                <th class="text-left px-4 py-3 font-medium">แบบทดสอบ</th>
                 <th class="text-left px-4 py-3 font-medium">วันที่สอบ</th>
                 <th class="text-left px-4 py-3 font-medium">คะแนน</th>
               </tr>
@@ -184,7 +184,7 @@
                 :key="h._id"
                 class="hover:bg-slate-50"
               >
-                <td class="px-4 py-3 text-slate-500">{{ i + 1 }}</td>
+                <td class="px-4 py-3 text-slate-600">{{ examTypeLabel[h.examType] || h.examType || "-" }}</td>
                 <td class="px-4 py-3 text-slate-600">{{ formatDate(h.createdAt) }}</td>
                 <td class="px-4 py-3 font-semibold text-indigo-600">
                   {{ h.totalScore }}/{{ h.maxScore }}
@@ -284,10 +284,18 @@ const scoreDiff = computed(() => {
   return l - f;
 });
 
+const examTypeLabel = {
+  pre_test:   "ก่อนเรียน",
+  in_class_1: "ท้ายคาบ 1",
+  in_class_2: "ท้ายคาบ 2",
+  in_class_3: "ท้ายคาบ 3",
+  post_test:  "หลังเรียน",
+};
+
 const chartData = computed(() => {
   const history = progress.value?.history || [];
   return {
-    labels: history.map((_, i) => `ครั้งที่ ${i + 1}`),
+    labels: history.map((h) => examTypeLabel[h.examType] || h.examType || "-"),
     datasets: [
       {
         label: "คะแนน (%)",

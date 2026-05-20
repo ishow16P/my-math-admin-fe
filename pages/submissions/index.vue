@@ -66,7 +66,7 @@
             <div>
               <div class="flex items-center gap-2 mb-1">
                 <span class="font-medium text-slate-800">{{ sub.studentId?.name || "N/A" }}</span>
-                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">{{ levelMap[sub.level] }}</span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="levelBadgeClass[sub.level]">{{ levelMap[sub.level] }}</span>
                 <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">{{ examTypeMap[sub.examType] || sub.examType }}</span>
               </div>
               <div class="text-xs text-slate-400">
@@ -113,6 +113,7 @@ definePageMeta({ middleware: "auth", layout: false });
 const { apiFetch } = useApi();
 const { error: toastError } = useToast();
 const levelMap = { m1: "ม.1", m2: "ม.2", m3: "ม.3" };
+const levelBadgeClass = { m1: "bg-indigo-100 text-indigo-700", m2: "bg-violet-100 text-violet-700", m3: "bg-orange-100 text-orange-700" };
 const statusLabel = { all: "ทั้งหมด", submitted: "รอตรวจ", graded: "ตรวจแล้ว" };
 const examTypeMap = {
   pre_test:   "แบบทดสอบก่อนเรียน",

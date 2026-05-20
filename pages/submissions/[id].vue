@@ -1,9 +1,18 @@
 <template>
   <NuxtLayout name="admin">
     <div class="p-6 md:p-8 max-w-3xl">
-      <NuxtLink to="/submissions" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium mb-5 inline-flex items-center gap-1">
-        ← กลับรายการข้อสอบ
-      </NuxtLink>
+      <div class="flex items-center justify-between mb-5">
+        <NuxtLink to="/submissions" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center gap-1">
+          ← กลับรายการข้อสอบ
+        </NuxtLink>
+        <button
+          @click="showScoring = true"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+        >
+          <FileText :size="13" />
+          เกณฑ์การให้คะแนน
+        </button>
+      </div>
 
       <div v-if="loading" class="flex items-center justify-center py-20">
         <Loader2 :size="24" class="animate-spin text-indigo-500" />
@@ -62,13 +71,23 @@
                 <div class="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">{{ ans.problemSnapshot }}</div>
                 <img v-if="ans.problemImageSnapshot" :src="ans.problemImageSnapshot" alt="โจทย์" class="mt-3 max-w-full rounded-lg" />
               </div>
+      
+              <!-- เฉลย -->
+              <div v-if="ans.referenceSolution || ans.answer" class="rounded-lg bg-emerald-50 border border-emerald-100 p-4">
+                <div class="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">เฉลย</div>
+                <div v-if="ans.answer" class="text-sm font-semibold text-emerald-800 mb-1">
+                  คำตอบ: {{ ans.answer }}
+                </div>
+                <div v-if="ans.referenceSolution" class="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                  {{ ans.referenceSolution }}
+                </div>
+              </div>
 
               <!-- Steps -->
               <div class="space-y-4">
                 <div
                   v-for="step in STEPS"
                   :key="step.key"
-                  v-show="ans[step.key]?.text || ans[step.key]?.imageUrl"
                   class="rounded-lg border border-slate-200"
                 >
                   <!-- Step Header: label + score -->
@@ -102,6 +121,10 @@
                         alt="ภาพวาด"
                         class="max-w-full rounded-lg border border-slate-200"
                       />
+                      <div v-if="!ans[step.key]?.text && !ans[step.key]?.imageUrl"
+                        class="p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-xs text-slate-300 italic">
+                        — ไม่มีคำตอบ —
+                      </div>
                     </div>
 
                     <!-- Teacher Feedback -->
@@ -234,6 +257,59 @@
       </div>
     </div>
 
+    <!-- Scoring Criteria Modal -->
+    <div v-if="showScoring" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showScoring = false" />
+      <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        <div class="p-6 pb-4 text-center border-b border-slate-100 flex-shrink-0">
+          <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <FileText :size="22" class="text-slate-600" />
+          </div>
+          <h2 class="text-lg font-bold text-slate-800">เกณฑ์การให้คะแนน</h2>
+          <p class="text-sm text-slate-500 mt-1">คะแนนเต็มรวม {{ grades.length * 10 }} คะแนน (ข้อละ 10 คะแนน)</p>
+        </div>
+        <div class="overflow-y-auto flex-1 px-8 py-4 space-y-5 text-sm text-slate-700">
+          <div class="mx-3">
+            <p class="font-semibold text-slate-800 mb-2">1. การทำความเข้าใจปัญหา <span class="text-indigo-600">(เต็ม 2 คะแนน)</span></p>
+            <ul class="space-y-1.5 pl-2">
+              <li class="flex items-start gap-2"><span class="mt-0.5 shrink-0 text-xs font-bold text-emerald-600 w-12">2 คะแนน</span><p class="text-slate-600">บอกสิ่งที่โจทย์กำหนดให้และสิ่งที่โจทย์ต้องการทราบ ตรงกับสถานการณ์ได้ครบถ้วน</p></li>
+              <li class="flex items-start gap-2"><span class="mt-0.5 shrink-0 text-xs font-bold text-amber-500 w-12">1 คะแนน</span><p class="text-slate-600">บอกสิ่งที่โจทย์กำหนดให้และสิ่งที่โจทย์ต้องการทราบ ตรงกับสถานการณ์แต่ไม่ครบถ้วน</p></li>
+              <li class="flex items-start gap-2"><span class="mt-0.5 shrink-0 text-xs font-bold text-slate-400 w-12">0 คะแนน</span><p class="text-slate-500">ตอบไม่ตรงกับสถานการณ์หรือไม่ตอบ</p></li>
+            </ul>
+          </div>
+          <div class="mx-3">
+            <p class="font-semibold text-slate-800 mb-2">2. การวางแผนแก้ปัญหา <span class="text-indigo-600">(เต็ม 2 คะแนน)</span></p>
+            <ul class="space-y-1.5 pl-2">
+              <li class="flex items-start gap-2"><span class="mt-0.5 shrink-0 text-xs font-bold text-emerald-600 w-12">2 คะแนน</span><p class="text-slate-600">วางแผนโดยใช้ข้อมูลจากขั้นทำความเข้าใจปัญหาและแปลงวิธีการแก้ปัญหาให้อยู่ในรูปประโยคสัญลักษณ์ได้ถูกต้อง</p></li>
+              <li class="flex items-start gap-2"><span class="mt-0.5 shrink-0 text-xs font-bold text-amber-500 w-12">1 คะแนน</span><p class="text-slate-600">วางแผนโดยใช้ข้อมูลจากขั้นทำความเข้าใจปัญหา แต่แปลงวิธีการแก้ปัญหาให้อยู่ในรูปประโยคสัญลักษณ์ไม่ถูกต้อง</p></li>
+              <li class="flex items-start gap-2"><span class="mt-0.5 shrink-0 text-xs font-bold text-slate-400 w-12">0 คะแนน</span><p class="text-slate-500">ไม่สามารถวางแผนการแก้ปัญหาได้</p></li>
+            </ul>
+          </div>
+          <div class="mx-3">
+            <p class="font-semibold text-slate-800 mb-2">3. การดำเนินการตามแผน <span class="text-indigo-600">(เต็ม 4 คะแนน)</span></p>
+            <ul class="space-y-1.5 pl-2">
+              <li class="flex items-start gap-2"><span class="mt-0.5 shrink-0 text-xs font-bold text-emerald-600 w-12">4 คะแนน</span><p class="text-slate-600">ดำเนินการแก้ปัญหาตามลำดับขั้น สามารถแก้ปัญหาและหาคำตอบได้ถูกต้อง</p></li>
+              <li class="flex items-start gap-2"><span class="mt-0.5 shrink-0 text-xs font-bold text-emerald-500 w-12">3 คะแนน</span><p class="text-slate-600">ดำเนินการแก้ปัญหาตามลำดับขั้น สามารถแก้ปัญหาได้และหาคำตอบได้ถูกต้องบางส่วน</p></li>
+              <li class="flex items-start gap-2"><span class="mt-0.5 shrink-0 text-xs font-bold text-amber-500 w-12">2 คะแนน</span><p class="text-slate-600">ดำเนินการแก้ปัญหาตามลำดับขั้น สามารถแก้ปัญหาได้ แต่ไม่สามารถหาคำตอบได้ถูกต้อง</p></li>
+              <li class="flex items-start gap-2"><span class="mt-0.5 shrink-0 text-xs font-bold text-amber-400 w-12">1 คะแนน</span><p class="text-slate-600">ดำเนินการแก้ปัญหาตามลำดับขั้นได้บางขั้นตอน แต่ไม่สามารถแก้ปัญหาได้</p></li>
+              <li class="flex items-start gap-2"><span class="mt-0.5 shrink-0 text-xs font-bold text-slate-400 w-12">0 คะแนน</span><p class="text-slate-500">ไม่สามารถแก้ไขปัญหาได้</p></li>
+            </ul>
+          </div>
+          <div class="mx-3">
+            <p class="font-semibold text-slate-800 mb-2">4. การตรวจสอบกระบวนการแก้ปัญหา <span class="text-indigo-600">(เต็ม 2 คะแนน)</span></p>
+            <ul class="space-y-1.5 pl-2">
+              <li class="flex items-start gap-2"><span class="mt-0.5 shrink-0 text-xs font-bold text-emerald-600 w-12">2 คะแนน</span><p class="text-slate-600">แสดงวิธีตรวจคำตอบได้ถูกต้อง หรือเมื่อตรวจคำตอบพบว่าไม่ถูก สามารถแก้ไขปัญหาได้</p></li>
+              <li class="flex items-start gap-2"><span class="mt-0.5 shrink-0 text-xs font-bold text-amber-500 w-12">1 คะแนน</span><p class="text-slate-600">แสดงวิธีตรวจคำตอบได้บางส่วนแต่ไม่ถูกต้อง หรือไม่สามารถตรวจพบว่าคำตอบไม่ถูกต้อง</p></li>
+              <li class="flex items-start gap-2"><span class="mt-0.5 shrink-0 text-xs font-bold text-slate-400 w-12">0 คะแนน</span><p class="text-slate-500">ไม่สามารถแสดงวิธีการตรวจคำตอบได้</p></li>
+            </ul>
+          </div>
+        </div>
+        <div class="p-5 border-t border-slate-100 flex-shrink-0">
+          <button @click="showScoring = false" class="w-full px-4 py-2.5 text-sm font-semibold text-white bg-slate-700 rounded-xl hover:bg-slate-800 transition">ปิด</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Delete Confirm Modal -->
     <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-black/40" @click="closeDeleteModal" />
@@ -280,7 +356,7 @@
 </template>
 
 <script setup>
-import { CheckCircle2, Loader2, ChevronDown, Zap, Trash2 } from 'lucide-vue-next'
+import { CheckCircle2, Loader2, ChevronDown, Zap, Trash2, FileText } from 'lucide-vue-next'
 import MathDisplay from '~/components/MathDisplay.vue'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
@@ -307,6 +383,7 @@ const overallFeedback = ref('')
 const grades = ref([])
 const openDropdown = ref(null)
 const showDeleteModal = ref(false)
+const showScoring = ref(false)
 const deleteConfirmText = ref('')
 const deleting = ref(false)
 
@@ -379,6 +456,8 @@ onMounted(async () => {
       questionId: a.questionId,
       problemSnapshot: a.problemSnapshot,
       problemImageSnapshot: a.problemImageSnapshot || '',
+      referenceSolution: a.referenceSolution || '',
+      answer: a.answer || '',
       stepFeedbacks: a.stepFeedbacks || {},
       step1: { ...(a.step1 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step1Score || 0, feedback: a.step1Feedback || '' },
       step2: { ...(a.step2 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step2Score || 0, feedback: a.step2Feedback || '' },
