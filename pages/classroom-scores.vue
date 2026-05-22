@@ -225,7 +225,6 @@
 
 <script setup>
 import { Loader2, Download, MessageSquare, X } from "lucide-vue-next";
-import * as XLSX from "xlsx";
 import { useApi } from "~/composables/useApi";
 import { useToast } from "~/composables/useToast";
 import { useAdminAuthStore } from "~/stores/auth";
@@ -463,7 +462,8 @@ async function loadScores() {
   }
 }
 
-function exportXLSX() {
+async function exportXLSX() {
+  const XLSX = await import("xlsx");
   const wb = XLSX.utils.book_new();
 
   // --- Sheet 1: คะแนน ---
