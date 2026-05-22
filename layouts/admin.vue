@@ -69,6 +69,16 @@
             <component :is="item.icon" :size="18" />
             {{ item.label }}
           </NuxtLink>
+          <div class="pt-3 mt-3 border-t border-slate-100">
+            <div class="px-3 py-1 text-sm text-slate-500">{{ auth.name }}</div>
+            <button
+              @click="mobileMenu = false; handleLogout()"
+              class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 transition"
+            >
+              <LogOut :size="18" />
+              ออกจากระบบ
+            </button>
+          </div>
         </div>
       </div>
 

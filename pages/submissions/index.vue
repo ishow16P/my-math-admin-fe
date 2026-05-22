@@ -27,7 +27,7 @@
           </div>
           <div class="flex flex-wrap gap-2">
             <button
-              v-for="l in ['all', 'm1', 'm2', 'm3']"
+              v-for="l in ['all', ...availableLevels]"
               :key="l"
               @click="filterLevel = l"
               class="px-3 py-1.5 rounded-lg text-sm font-medium transition"
@@ -107,12 +107,18 @@
 import { Loader2, Search } from "lucide-vue-next";
 import { useApi } from "~/composables/useApi";
 import { useToast } from "~/composables/useToast";
+import { useAdminAuthStore } from "~/stores/auth";
 
 definePageMeta({ middleware: "auth", layout: false });
 
 const { apiFetch } = useApi();
 const { error: toastError } = useToast();
+const auth = useAdminAuthStore();
 const levelMap = { m1: "ม.1", m2: "ม.2", m3: "ม.3" };
+
+const availableLevels = computed(() =>
+  auth.isSuperAdmin ? ["m1", "m2", "m3"] : (auth.managedLevels || [])
+);
 const levelBadgeClass = { m1: "bg-indigo-100 text-indigo-700", m2: "bg-violet-100 text-violet-700", m3: "bg-orange-100 text-orange-700" };
 const statusLabel = { all: "ทั้งหมด", submitted: "รอตรวจ", graded: "ตรวจแล้ว" };
 const examTypeMap = {

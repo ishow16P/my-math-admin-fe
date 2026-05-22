@@ -1,6 +1,6 @@
 <template>
   <NuxtLayout name="admin">
-    <div class="p-6 md:p-8 max-w-3xl">
+    <div class="p-6 md:p-8">
       <div class="flex items-center justify-between mb-5">
         <NuxtLink to="/submissions" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center gap-1">
           ← กลับรายการข้อสอบ
@@ -18,7 +18,9 @@
         <Loader2 :size="24" class="animate-spin text-indigo-500" />
       </div>
 
-      <div v-else-if="submission" class="space-y-5">
+      <div v-else-if="submission" class="flex flex-col xl:flex-row gap-6 items-start">
+      <!-- Left: Grading -->
+      <div class="w-full xl:w-[65%] min-w-0 space-y-5">
         <!-- Header Card -->
         <div class="bg-white rounded-xl border border-slate-200 p-5">
           <div class="flex items-start justify-between gap-3 flex-wrap">
@@ -255,6 +257,30 @@
           </div>
         </form>
       </div>
+
+      <!-- Right: Self-Assessment -->
+      <div class="w-full xl:w-[35%] min-w-0">
+        <div class="bg-white rounded-xl border border-slate-200 sticky top-6 overflow-auto">
+          <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+            <ClipboardList :size="15" class="text-indigo-500" />
+            <span class="text-sm font-semibold text-slate-700">แบบประเมินความสามารถในการกำกับการเรียนรู้ตนเอง
+
+</span>
+          </div>
+          <div v-if="selfAssessment" class="p-4 space-y-4">
+            <div v-for="(q, i) in ASSESSMENT_QUESTIONS" :key="i">
+              <div class="text-xs font-medium text-slate-500 mb-1">{{ i + 1 }}. {{ q }}</div>
+              <div class="text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
+                {{ selfAssessment[`q${i + 1}`] || '—' }}
+              </div>
+            </div>
+          </div>
+          <div v-else class="p-6 text-center text-sm text-slate-400">
+            นักเรียนยังไม่ได้ส่งแบบประเมิน
+          </div>
+        </div>
+      </div>
+      </div>
     </div>
 
     <!-- Scoring Criteria Modal -->
@@ -356,7 +382,7 @@
 </template>
 
 <script setup>
-import { CheckCircle2, Loader2, ChevronDown, Zap, Trash2, FileText } from 'lucide-vue-next'
+import { CheckCircle2, Loader2, ChevronDown, Zap, Trash2, FileText, ClipboardList } from 'lucide-vue-next'
 import MathDisplay from '~/components/MathDisplay.vue'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
@@ -376,7 +402,16 @@ const STEPS = [
   { key: 'step4', label: 'ขั้นที่ 4: ตรวจสอบกระบวนการ', maxScore: 2 },
 ]
 
+const ASSESSMENT_QUESTIONS = [
+  'หลังจากทราบผลการทดสอบครั้งที่แล้วและอ่านข้อเสนอแนะเรียบร้อยแล้ว นักเรียนคิดว่าตนเองต้องพัฒนาเรื่องใดบ้าง',
+  'หลังจากทราบผลการทดสอบครั้งที่แล้วและอ่านข้อเสนอแนะเรียบร้อยแล้ว นักเรียนเข้าใจวิธีการแก้ปัญหาเพิ่มขึ้นอย่างไรบ้าง',
+  'ข้อมูลที่นักเรียนได้รับจากระบบหลังการสอบมีผลต่อการเตรียมตัวของนักเรียนอย่างไร',
+  'ระหว่างการสอบครั้งที่แล้วจนถึงการสอบครั้งนี้ นักเรียนเตรียมตัวอย่างไรบ้าง',
+  'ในการสอบครั้งถัดไป นักเรียนจะทำอย่างไรเพื่อให้ได้คะแนนที่สูงขึ้น',
+]
+
 const submission = ref(null)
+const selfAssessment = ref(null)
 const loading = ref(true)
 const saving = ref(false)
 const overallFeedback = ref('')
@@ -465,6 +500,10 @@ onMounted(async () => {
       step4: { ...(a.step4 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step4Score || 0, feedback: a.step4Feedback || '' },
       teacherComment: a.teacherComment || '',
     }))
+    // fetch self-assessment (non-blocking)
+    apiFetch(`/self-assessments/admin/${route.params.id}`)
+      .then(sa => { selfAssessment.value = sa })
+      .catch(() => {})
   } catch (e) {
     toastError(e?.data?.message || "ไม่สามารถโหลดข้อมูลการส่งได้")
   } finally {
