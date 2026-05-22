@@ -158,7 +158,7 @@
 
         <!-- Score History Chart -->
         <div
-          v-if="progress.history?.length > 1"
+          v-if="sortedHistory.length > 1"
           class="bg-white rounded-xl border border-slate-200 p-5"
         >
           <h3 class="text-sm font-semibold text-slate-700 mb-4">กราฟพัฒนาการ</h3>
@@ -167,7 +167,7 @@
 
         <!-- History Table -->
         <div
-          v-if="progress.history?.length > 0"
+          v-if="sortedHistory.length > 0"
           class="bg-white rounded-xl border border-slate-200 overflow-hidden"
         >
           <table class="w-full text-sm">
@@ -180,7 +180,7 @@
             </thead>
             <tbody class="divide-y divide-slate-100">
               <tr
-                v-for="(h, i) in progress.history"
+                v-for="(h, i) in sortedHistory"
                 :key="h._id"
                 class="hover:bg-slate-50"
               >
@@ -292,8 +292,17 @@ const examTypeLabel = {
   post_test:  "หลังเรียน",
 };
 
-const chartData = computed(() => {
+const EXAM_TYPE_ORDER = ["pre_test", "in_class_1", "in_class_2", "in_class_3", "post_test"];
+
+const sortedHistory = computed(() => {
   const history = progress.value?.history || [];
+  return [...history].sort(
+    (a, b) => EXAM_TYPE_ORDER.indexOf(a.examType) - EXAM_TYPE_ORDER.indexOf(b.examType)
+  );
+});
+
+const chartData = computed(() => {
+  const history = sortedHistory.value;
   return {
     labels: history.map((h) => examTypeLabel[h.examType] || h.examType || "-"),
     datasets: [
@@ -331,18 +340,18 @@ async function exportXLSX() {
   const XLSX = await import("xlsx");
   const p = progress.value;
   const student = p.student;
-  const history = p.history || [];
+  const history = sortedHistory.value;
   const first = history[0];
   const latest = history[history.length - 1];
   const numQ = Math.max(...history.map((h) => h.answers?.length || 0), 0) || 3;
 
   // --- Sheet 1: คะแนนทุกครั้ง ---
-  const s1Header = ["ครั้งที่", "วันที่สอบ"];
+  const s1Header = ["ครั้งที่", "ประเภท", "วันที่สอบ"];
   for (let q = 1; q <= numQ; q++) s1Header.push(`ข้อ ${q}`);
   s1Header.push("รวม", "คะแนนเต็ม", "%");
 
   const s1Rows = history.map((h, i) => {
-    const row = [i + 1, formatDate(h.createdAt)];
+    const row = [i + 1, examTypeLabel[h.examType] || h.examType || "-", formatDate(h.createdAt)];
     for (let q = 0; q < numQ; q++) row.push(h.answers?.[q]?.scoreGiven ?? "-");
     const pct = h.maxScore ? Math.round((h.totalScore / h.maxScore) * 100) : 0;
     row.push(h.totalScore, h.maxScore, pct + "%");
