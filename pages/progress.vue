@@ -108,51 +108,25 @@
           </div>
         </div>
 
-        <!-- First vs Latest comparison -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="bg-white rounded-xl border border-slate-200 p-5">
-            <div class="text-xs font-semibold text-slate-400 uppercase mb-3">
-              ครั้งแรก
+        <!-- Score cards per exam type (fixed order) -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div
+            v-for="type in EXAM_TYPE_ORDER"
+            :key="type"
+            class="bg-white rounded-xl border p-4"
+            :class="examTypeMap[type] ? 'border-indigo-200' : 'border-slate-200 opacity-50'"
+          >
+            <div class="text-xs font-semibold mb-2"
+              :class="examTypeMap[type] ? 'text-indigo-400' : 'text-slate-400'">
+              {{ examTypeLabel[type] }}
             </div>
-            <template v-if="progress.first">
-              <div class="text-3xl font-bold text-slate-800 mb-1">
-                {{ progress.first.totalScore
-                }}<span class="text-lg text-slate-400"
-                  >/{{ progress.first.maxScore }}</span
-                >
+            <template v-if="examTypeMap[type]">
+              <div class="text-2xl font-bold text-indigo-600">
+                {{ examTypeMap[type].totalScore }}<span class="text-sm text-slate-400">/{{ examTypeMap[type].maxScore }}</span>
               </div>
-              <div class="text-sm text-slate-500">
-                {{ formatDate(progress.first.createdAt) }}
-              </div>
+              <div class="text-xs text-slate-400 mt-1">{{ formatDate(examTypeMap[type].createdAt) }}</div>
             </template>
-            <div v-else class="text-slate-400 text-sm">ยังไม่มีข้อมูล</div>
-          </div>
-
-          <div class="bg-white rounded-xl border border-indigo-200 p-5">
-            <div class="text-xs font-semibold text-indigo-400 uppercase mb-3">ล่าสุด</div>
-            <template v-if="progress.latest">
-              <div class="text-3xl font-bold text-indigo-600 mb-1">
-                {{ progress.latest.totalScore
-                }}<span class="text-lg text-slate-400"
-                  >/{{ progress.latest.maxScore }}</span
-                >
-              </div>
-              <div class="text-sm text-slate-500">
-                {{ formatDate(progress.latest.createdAt) }}
-              </div>
-              <div
-                v-if="progress.first && progress.latest._id !== progress.first._id"
-                class="mt-2"
-              >
-                <span
-                  class="text-sm font-semibold"
-                  :class="scoreDiff >= 0 ? 'text-emerald-600' : 'text-red-500'"
-                >
-                  {{ scoreDiff >= 0 ? "▲" : "▼" }} {{ Math.abs(scoreDiff).toFixed(1) }}%
-                </span>
-              </div>
-            </template>
-            <div v-else class="text-slate-400 text-sm">ยังไม่มีข้อมูล</div>
+            <div v-else class="text-sm text-slate-300">ยังไม่มีข้อมูล</div>
           </div>
         </div>
 
@@ -299,6 +273,15 @@ const sortedHistory = computed(() => {
   return [...history].sort(
     (a, b) => EXAM_TYPE_ORDER.indexOf(a.examType) - EXAM_TYPE_ORDER.indexOf(b.examType)
   );
+});
+
+// map examType → submission (ใช้ล่าสุดถ้ามีหลายครั้งของ type เดียวกัน)
+const examTypeMap = computed(() => {
+  const map = {};
+  for (const h of sortedHistory.value) {
+    map[h.examType] = h;
+  }
+  return map;
 });
 
 const chartData = computed(() => {
