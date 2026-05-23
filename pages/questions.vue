@@ -199,7 +199,11 @@
                   placeholder="ระบุแนวทางการเฉลย..."
                   class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
                 />
-                <!-- รูปภาพเฉลย -->
+                <!-- รูปภาพประกอบแนวทางเฉลย -->
+                <label for="q-solution-images" class="block text-sm font-medium text-slate-700 mb-1.5">
+                  รูปภาพประกอบแนวทางเฉลย
+                  <span class="text-slate-400 font-normal">(ถ้ามี)</span>
+                </label>  
                 <div class="mt-2">
                   <div v-if="form.referenceSolutionImageUrls.length" class="mb-2 flex flex-wrap gap-2">
                     <div v-for="(url, idx) in form.referenceSolutionImageUrls" :key="idx" class="relative inline-block">
