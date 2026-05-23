@@ -37,7 +37,7 @@
             <button @click="exportXLSX" :disabled="!scores.length"
               class="h-10 inline-flex items-center justify-center gap-1.5 px-4 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50">
               <Download :size="14" />
-              Export
+              ดาวน์โหลด
             </button>
           </div>
         </div>
@@ -115,11 +115,15 @@
                 class="text-center px-4 py-2 font-medium whitespace-nowrap border-l border-slate-200">
                 {{ detailET.questionCount > 1 ? `ข้อ ${qi + 1}` : detailET.label }}
               </th>
+              <th v-if="detailET.questionCount > 1" rowspan="3"
+                class="text-center px-4 py-2 font-medium whitespace-nowrap text-slate-600">
+                คะแนนรวม
+              </th>
             </tr>
             <tr class="border-b border-slate-100">
               <template v-for="qi in detailQuestions" :key="qi">
                 <th v-for="s in STEP_COLS" :key="`${qi}-${s.key}`"
-                  class="text-center px-2 py-1.5 font-normal text-xs whitespace-nowrap border-l border-slate-100"
+                  class="text-center px-2 py-1.5 font-normal text-xs whitespace-nowrap border-slate-100"
                   :class="s.key === 'total' ? 'bg-indigo-50 text-indigo-500' : ''">
                   {{ s.label }}
                 </th>
@@ -128,7 +132,7 @@
             <tr>
               <template v-for="qi in detailQuestions" :key="qi">
                 <th v-for="s in STEP_COLS" :key="`${qi}-${s.key}-max`"
-                  class="text-center px-2 py-1 font-normal text-xs text-slate-300 whitespace-nowrap border-l border-slate-100">
+                  class="text-center px-2 py-1 font-normal text-xs text-slate-300 whitespace-nowrap ">
                   {{ s.max }}
                 </th>
               </template>
@@ -154,6 +158,14 @@
                   <span v-else class="text-slate-200">—</span>
                 </td>
               </template>
+              <td v-if="detailET.questionCount > 1" class="px-3 py-3 text-center">
+                <template v-if="detailQuestions.some(qi => getScore(s, loadedExamType, qi, 'total') !== null)">
+                  <span class="font-bold text-slate-800">
+                    {{ detailQuestions.reduce((sum, qi) => sum + (getScore(s, loadedExamType, qi, 'total') ?? 0), 0) }}
+                  </span>
+                </template>
+                <span v-else class="text-slate-200">—</span>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -484,16 +496,24 @@ async function exportXLSX() {
     sheet1Rows.push(avgRow);
   } else {
     const et = detailET.value;
+    const hasGrandTotal = et.questionCount > 1;
     const h1 = ["ลำดับ", "รหัส", "ชื่อ-นามสกุล", "ห้อง"];
     detailQuestions.value.forEach((qi) => { const l = et.questionCount > 1 ? `ข้อ ${qi + 1}` : et.label; h1.push(l, "", "", "", ""); });
+    if (hasGrandTotal) h1.push("คะแนนรวม");
     const h2 = ["", "", "", ""];
     detailQuestions.value.forEach(() => { STEP_COLS.forEach((sc) => h2.push(sc.label)); });
+    if (hasGrandTotal) h2.push("");
     const h3 = ["", "", "", ""];
     detailQuestions.value.forEach(() => { STEP_COLS.forEach((sc) => h3.push(sc.max)); });
+    if (hasGrandTotal) h3.push(et.questionCount * 10);
     sheet1Rows.push(h1, h2, h3);
     scores.value.forEach((s, i) => {
       const row = [i + 1, s.studentId, s.name, s.classroom ? `${s.level.replace("m", "")}/${s.classroom}` : "-"];
       detailQuestions.value.forEach((qi) => { STEP_COLS.forEach((sc) => row.push(getScore(s, loadedExamType.value, qi, sc.key) ?? "")); });
+      if (hasGrandTotal) {
+        const grandTotal = detailQuestions.value.reduce((sum, qi) => sum + (getScore(s, loadedExamType.value, qi, "total") ?? 0), 0);
+        row.push(grandTotal);
+      }
       sheet1Rows.push(row);
     });
   }

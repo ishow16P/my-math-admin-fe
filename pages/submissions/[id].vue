@@ -71,17 +71,22 @@
               <div class="rounded-lg bg-indigo-50 border border-indigo-100 p-4">
                 <div class="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-2">โจทย์</div>
                 <div class="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">{{ ans.problemSnapshot }}</div>
-                <img v-if="ans.problemImageSnapshot" :src="ans.problemImageSnapshot" alt="โจทย์" class="mt-3 max-w-full rounded-lg" />
+                <div v-if="ans.problemImageSnapshots?.length" class="mt-3 flex flex-col gap-2">
+                  <img v-for="(url, i) in ans.problemImageSnapshots" :key="i" :src="url" alt="โจทย์" class="max-w-full rounded-lg" />
+                </div>
               </div>
       
               <!-- เฉลย -->
-              <div v-if="ans.referenceSolution || ans.answer" class="rounded-lg bg-emerald-50 border border-emerald-100 p-4">
+              <div v-if="ans.referenceSolution || ans.answer || ans.referenceSolutionImageUrls?.length" class="rounded-lg bg-emerald-50 border border-emerald-100 p-4">
                 <div class="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">เฉลย</div>
                 <div v-if="ans.answer" class="text-sm font-semibold text-emerald-800 mb-1">
                   คำตอบ: {{ ans.answer }}
                 </div>
                 <div v-if="ans.referenceSolution" class="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
                   {{ ans.referenceSolution }}
+                </div>
+                <div v-if="ans.referenceSolutionImageUrls?.length" class="mt-2 flex flex-wrap gap-2">
+                  <img v-for="(url, i) in ans.referenceSolutionImageUrls" :key="i" :src="url" alt="รูปภาพเฉลย" class="max-w-full rounded-lg border border-emerald-200" />
                 </div>
               </div>
 
@@ -263,9 +268,7 @@
         <div class="bg-white rounded-xl border border-slate-200 sticky top-6 overflow-auto">
           <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
             <ClipboardList :size="15" class="text-indigo-500" />
-            <span class="text-sm font-semibold text-slate-700">แบบประเมินความสามารถในการกำกับการเรียนรู้ตนเอง
-
-</span>
+            <span class="text-sm font-semibold text-slate-700">แบบประเมินความสามารถในการกำกับการเรียนรู้ตนเอง</span>
           </div>
           <div v-if="selfAssessment" class="p-4 space-y-4">
             <div v-for="(q, i) in ASSESSMENT_QUESTIONS" :key="i">
@@ -277,6 +280,15 @@
           </div>
           <div v-else class="p-6 text-center text-sm text-slate-400">
             นักเรียนยังไม่ได้ส่งแบบประเมิน
+          </div>
+          <div v-if="selfAssessment" class="px-4 py-3 border-t border-slate-100">
+            <button
+              @click="exportSelfAssessment"
+              class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition"
+            >
+              <Download :size="13" />
+              ดาวน์โหลดแบบประเมิน
+            </button>
           </div>
         </div>
       </div>
@@ -382,7 +394,7 @@
 </template>
 
 <script setup>
-import { CheckCircle2, Loader2, ChevronDown, Zap, Trash2, FileText, ClipboardList } from 'lucide-vue-next'
+import { CheckCircle2, Loader2, ChevronDown, Zap, Trash2, FileText, ClipboardList, Download } from 'lucide-vue-next'
 import MathDisplay from '~/components/MathDisplay.vue'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
@@ -490,8 +502,9 @@ onMounted(async () => {
     grades.value = data.answers.map((a) => ({
       questionId: a.questionId,
       problemSnapshot: a.problemSnapshot,
-      problemImageSnapshot: a.problemImageSnapshot || '',
+      problemImageSnapshots: a.problemImageSnapshots || [],
       referenceSolution: a.referenceSolution || '',
+      referenceSolutionImageUrls: a.referenceSolutionImageUrls || [],
       answer: a.answer || '',
       stepFeedbacks: a.stepFeedbacks || {},
       step1: { ...(a.step1 || { inputType: 'text', text: '', imageUrl: '' }), scoreGiven: a.step1Score || 0, feedback: a.step1Feedback || '' },
@@ -514,6 +527,29 @@ onMounted(async () => {
 onUnmounted(() => {
   document.removeEventListener('click', closeDropdown)
 })
+
+async function exportSelfAssessment() {
+  const XLSX = await import('xlsx')
+  const student = submission.value?.studentId
+  const sa = selfAssessment.value
+
+  const rows = [
+    ['ชื่อ-นามสกุล', student?.name || '-'],
+    ['รหัสนักเรียน', student?.studentId || '-'],
+    [],
+    ['ข้อ', 'คำถาม', 'คำตอบ'],
+    ...ASSESSMENT_QUESTIONS.map((q, i) => [i + 1, q, sa?.[`q${i + 1}`] || '-']),
+  ]
+
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [{ wch: 6 }, { wch: 60 }, { wch: 60 }]
+
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'แบบประเมินตนเอง')
+
+  const filename = `แบบประเมิน-${student?.studentId || 'student'}.xlsx`
+  XLSX.writeFile(wb, filename)
+}
 
 async function handleGrade() {
   saving.value = true

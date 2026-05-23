@@ -71,7 +71,7 @@
               class="h-10 px-4 inline-flex items-center gap-1.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download :size="14" />
-              Export
+              ดาวน์โหลด
             </button>
           </div>
         </div>

@@ -143,20 +143,22 @@
               <!-- รูปภาพประกอบ -->
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">
-                  รูปภาพประกอบ
+                  รูปภาพประกอบโจทย์
                   <span class="text-slate-400 font-normal">(ถ้ามี)</span>
                 </label>
 
-                <!-- Preview -->
-                <div v-if="form.problemImageUrl" class="mb-2 relative inline-block">
-                  <img :src="form.problemImageUrl" alt="รูปภาพประกอบ" class="max-h-40 rounded-lg border border-slate-200 object-contain" />
-                  <button
-                    type="button"
-                    @click="form.problemImageUrl = ''"
-                    class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition"
-                  >
-                    <X :size="11" />
-                  </button>
+                <!-- Preview list -->
+                <div v-if="form.problemImageUrls.length" class="mb-2 flex flex-wrap gap-2">
+                  <div v-for="(url, idx) in form.problemImageUrls" :key="idx" class="relative inline-block">
+                    <img :src="url" alt="รูปภาพประกอบ" class="h-28 rounded-lg border border-slate-200 object-contain" />
+                    <button
+                      type="button"
+                      @click="form.problemImageUrls.splice(idx, 1)"
+                      class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition"
+                    >
+                      <X :size="11" />
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Upload button -->
@@ -171,7 +173,7 @@
                   >
                     <Loader2 v-if="imageUploading" :size="14" class="animate-spin" />
                     <ImageIcon v-else :size="14" />
-                    {{ imageUploading ? 'กำลังอัปโหลด...' : form.problemImageUrl ? 'เปลี่ยนรูป' : 'อัปโหลดรูปภาพ' }}
+                    {{ imageUploading ? 'กำลังอัปโหลด...' : 'เพิ่มรูปภาพ' }}
                     <input
                       type="file"
                       accept="image/*"
@@ -197,6 +199,43 @@
                   placeholder="ระบุแนวทางการเฉลย..."
                   class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-slate-300"
                 />
+                <!-- รูปภาพเฉลย -->
+                <div class="mt-2">
+                  <div v-if="form.referenceSolutionImageUrls.length" class="mb-2 flex flex-wrap gap-2">
+                    <div v-for="(url, idx) in form.referenceSolutionImageUrls" :key="idx" class="relative inline-block">
+                      <img :src="url" alt="รูปภาพเฉลย" class="h-28 rounded-lg border border-slate-200 object-contain" />
+                      <button
+                        type="button"
+                        @click="form.referenceSolutionImageUrls.splice(idx, 1)"
+                        class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition"
+                      >
+                        <X :size="11" />
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      :class="[
+                        'inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer transition',
+                        solutionImageUploading
+                          ? 'border-slate-200 text-slate-400 bg-slate-50 cursor-not-allowed'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-emerald-300 hover:text-emerald-600'
+                      ]"
+                    >
+                      <Loader2 v-if="solutionImageUploading" :size="14" class="animate-spin" />
+                      <ImageIcon v-else :size="14" />
+                      {{ solutionImageUploading ? 'กำลังอัปโหลด...' : 'เพิ่มรูปภาพเฉลย' }}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        class="hidden"
+                        :disabled="solutionImageUploading"
+                        @change="handleSolutionImageUpload"
+                      />
+                    </label>
+                    <span class="ml-2 text-xs text-slate-400">ไฟล์ไม่เกิน 5MB</span>
+                  </div>
+                </div>
               </div>
 
               <!-- คำตอบ -->
@@ -331,13 +370,15 @@ const form = reactive({
   level: 'm1',
   pool: 'any',
   problemText: '',
-  problemImageUrl: '',
+  problemImageUrls: [],
   referenceSolution: '',
+  referenceSolutionImageUrls: [],
   answer: '',
   stepFeedbacks: emptyStepFeedbacks(),
 })
 const newFeedbackTexts = reactive({ step1: '', step2: '', step3: '', step4: '' })
 const imageUploading = ref(false)
+const solutionImageUploading = ref(false)
 const errors = reactive({ problemText: '' })
 
 function validate() {
@@ -358,11 +399,33 @@ async function handleImageUpload(event) {
     const fd = new FormData()
     fd.append('image', file)
     const data = await apiFetch('/upload/question-image', { method: 'POST', body: fd })
-    form.problemImageUrl = data.url
+    form.problemImageUrls.push(data.url)
   } catch (e) {
     toastError(e?.data?.message || 'อัปโหลดรูปไม่สำเร็จ')
   } finally {
     imageUploading.value = false
+    event.target.value = ''
+  }
+}
+
+async function handleSolutionImageUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) {
+    toastError('ไฟล์ใหญ่เกิน 5MB กรุณาเลือกไฟล์ขนาดเล็กกว่านี้')
+    event.target.value = ''
+    return
+  }
+  solutionImageUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('image', file)
+    const data = await apiFetch('/upload/question-image', { method: 'POST', body: fd })
+    form.referenceSolutionImageUrls.push(data.url)
+  } catch (e) {
+    toastError(e?.data?.message || 'อัปโหลดรูปไม่สำเร็จ')
+  } finally {
+    solutionImageUploading.value = false
     event.target.value = ''
   }
 }
@@ -390,8 +453,9 @@ function openModal(q = null) {
     form.level = q.level
     form.pool = q.pool || 'any'
     form.problemText = q.problemText
-    form.problemImageUrl = q.problemImageUrl || ''
+    form.problemImageUrls = q.problemImageUrls?.length ? [...q.problemImageUrls] : (q.problemImageUrl ? [q.problemImageUrl] : [])
     form.referenceSolution = q.referenceSolution
+    form.referenceSolutionImageUrls = q.referenceSolutionImageUrls?.length ? [...q.referenceSolutionImageUrls] : (q.referenceSolutionImageUrl ? [q.referenceSolutionImageUrl] : [])
     form.answer = q.answer || ''
     const sf = q.stepFeedbacks || {}
     form.stepFeedbacks = {
@@ -405,8 +469,9 @@ function openModal(q = null) {
     form.level = availableLevels.value[0] || 'm1'
     form.pool = 'any'
     form.problemText = ''
-    form.problemImageUrl = ''
+    form.problemImageUrls = []
     form.referenceSolution = ''
+    form.referenceSolutionImageUrls = []
     form.answer = ''
     form.stepFeedbacks = emptyStepFeedbacks()
   }
