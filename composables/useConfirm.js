@@ -6,6 +6,7 @@ const state = reactive({
   message: '',
   confirmLabel: 'ยืนยัน',
   confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+  danger: true,
   resolve: null,
 })
 
@@ -14,9 +15,10 @@ export function useConfirm() {
     state.title = title
     state.message = message
     state.confirmLabel = confirmLabel
+    state.danger = danger
     state.confirmClass = danger
       ? 'bg-red-600 hover:bg-red-700 text-white'
-      : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
     state.visible = true
     return new Promise((resolve) => {
       state.resolve = resolve

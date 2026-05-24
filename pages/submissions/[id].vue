@@ -252,12 +252,13 @@
               ลบข้อสอบนี้
             </button>
             <button
-              type="submit"
+              type="button"
               :disabled="saving"
+              @click="confirmGrade"
               class="inline-flex items-center gap-2 px-6 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition disabled:opacity-50"
             >
               <CheckCircle2 :size="16" />
-              {{ saving ? 'กำลังบันทึก...' : 'บันทึกการตรวจ' }}
+              บันทึกการตรวจ
             </button>
           </div>
         </form>
@@ -398,6 +399,7 @@ import { CheckCircle2, Loader2, ChevronDown, Zap, Trash2, FileText, ClipboardLis
 import MathDisplay from '~/components/MathDisplay.vue'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
+import { useConfirm } from '~/composables/useConfirm'
 
 definePageMeta({ middleware: 'auth', layout: false })
 
@@ -431,6 +433,7 @@ const grades = ref([])
 const openDropdown = ref(null)
 const showDeleteModal = ref(false)
 const showScoring = ref(false)
+const { confirm } = useConfirm()
 const deleteConfirmText = ref('')
 const deleting = ref(false)
 
@@ -527,6 +530,17 @@ onMounted(async () => {
 onUnmounted(() => {
   document.removeEventListener('click', closeDropdown)
 })
+
+async function confirmGrade() {
+  const ok = await confirm({
+    title: 'ยืนยันการตรวจข้อสอบ',
+    message: `คะแนนรวม ${computedTotal.value} / ${grades.value.length * 10} คะแนน\nนักเรียนจะเห็นคะแนนและข้อเสนอแนะทันที`,
+    confirmLabel: 'ยืนยัน',
+    danger: false,
+  })
+  if (!ok) return
+  handleGrade()
+}
 
 async function exportSelfAssessment() {
   const XLSX = await import('xlsx')

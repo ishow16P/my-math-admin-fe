@@ -11,15 +11,27 @@
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
           <!-- Icon -->
           <div class="flex justify-center">
-            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-              <AlertTriangle :size="22" class="text-red-500" />
+            <div
+              class="w-12 h-12 rounded-full flex items-center justify-center"
+              :class="state.danger ? 'bg-red-100' : 'bg-emerald-100'"
+            >
+              <AlertTriangle v-if="state.danger" :size="22" class="text-red-500" />
+              <CheckCircle2 v-else :size="22" class="text-emerald-500" />
             </div>
           </div>
 
           <!-- Text -->
-          <div class="text-center space-y-1">
+          <div class="text-center space-y-2">
             <h2 class="text-base font-bold text-slate-800">{{ state.title }}</h2>
-            <p v-if="state.message" class="text-sm text-slate-500">{{ state.message }}</p>
+            <template v-if="state.message">
+              <template v-if="messageLines.length > 1">
+                <p class="text-sm font-semibold" :class="state.danger ? 'text-red-600' : 'text-emerald-600'">
+                  {{ messageLines[0] }}
+                </p>
+                <p class="text-xs text-slate-400">{{ messageLines[1] }}</p>
+              </template>
+              <p v-else class="text-sm text-slate-500">{{ state.message }}</p>
+            </template>
           </div>
 
           <!-- Actions -->
@@ -47,10 +59,12 @@
 </template>
 
 <script setup>
-import { AlertTriangle } from 'lucide-vue-next'
+import { AlertTriangle, CheckCircle2 } from 'lucide-vue-next'
 import { useConfirm } from '~/composables/useConfirm'
 
 const { state, onConfirm, onCancel } = useConfirm()
+
+const messageLines = computed(() => state.message?.split('\n') ?? [])
 </script>
 
 <style scoped>
