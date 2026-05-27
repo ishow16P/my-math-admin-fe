@@ -175,19 +175,30 @@
                   <span v-if="!editingId" class="text-red-500">*</span>
                   <span v-else class="text-slate-400 font-normal">(เว้นว่างถ้าไม่เปลี่ยน)</span>
                 </label>
-                <input
-                  id="s-password"
-                  v-model="form.password"
-                  type="password"
-                  placeholder="ระบุรหัสผ่าน..."
-                  @input="errors.password = ''"
-                  :class="[
-                    'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 placeholder:text-slate-300',
-                    errors.password
-                      ? 'border-red-400 focus:ring-red-300 bg-red-50'
-                      : 'border-slate-200 focus:ring-indigo-300'
-                  ]"
-                />
+                <div class="relative">
+                  <input
+                    id="s-password"
+                    v-model="form.password"
+                    :type="showPassword ? 'text' : 'password'"
+                    placeholder="ระบุรหัสผ่าน..."
+                    @input="errors.password = ''"
+                    :class="[
+                      'w-full px-3 py-2 pr-9 border rounded-lg text-sm focus:outline-none focus:ring-1 placeholder:text-slate-300',
+                      errors.password
+                        ? 'border-red-400 focus:ring-red-300 bg-red-50'
+                        : 'border-slate-200 focus:ring-indigo-300'
+                    ]"
+                  />
+                  <button
+                    type="button"
+                    tabindex="-1"
+                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                    @click="showPassword = !showPassword"
+                  >
+                    <Eye v-if="!showPassword" :size="15" />
+                    <EyeOff v-else :size="15" />
+                  </button>
+                </div>
                 <p v-if="errors.password" class="mt-1 text-xs text-red-500">{{ errors.password }}</p>
               </div>
 
@@ -212,7 +223,7 @@
 </template>
 
 <script setup>
-import { Plus, Pencil, Trash2, Search, Loader2 } from 'lucide-vue-next'
+import { Eye, EyeOff, Loader2, Pencil, Plus, Search, Trash2 } from 'lucide-vue-next'
 import { useApi } from '~/composables/useApi'
 import { useToast } from '~/composables/useToast'
 import { useConfirm } from '~/composables/useConfirm'
@@ -235,6 +246,7 @@ const filterLevel = ref('all')
 const searchQuery = ref('')
 const currentPage = ref(1)
 const showModal = ref(false)
+const showPassword = ref(false)
 const editingId = ref(null)
 const form = reactive({ studentId: '', name: '', level: 'm1', classroom: null, password: '' })
 const errors = reactive({ studentId: '', name: '', password: '' })
@@ -271,6 +283,7 @@ function openModal(s = null) {
   errors.studentId = ''
   errors.name = ''
   errors.password = ''
+  showPassword.value = false
   showModal.value = true
 }
 

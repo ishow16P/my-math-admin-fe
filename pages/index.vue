@@ -39,16 +39,25 @@
               <Lock :size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 v-model="form.password"
-                type="password"
+                :type="showPassword ? 'text' : 'password'"
                 placeholder="กรอกรหัสผ่าน"
                 @input="errors.password = ''"
                 :class="[
-                  'w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 transition placeholder:text-slate-300',
+                  'w-full pl-10 pr-10 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 transition placeholder:text-slate-300',
                   errors.password
                     ? 'border-red-400 focus:ring-red-200'
                     : 'border-slate-200 focus:ring-indigo-300 focus:border-indigo-300'
                 ]"
               />
+              <button
+                type="button"
+                tabindex="-1"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                @click="showPassword = !showPassword"
+              >
+                <Eye v-if="!showPassword" :size="16" />
+                <EyeOff v-else :size="16" />
+              </button>
             </div>
             <p v-if="errors.password" class="mt-1 text-xs text-red-500">{{ errors.password }}</p>
           </div>
@@ -74,7 +83,7 @@
 </template>
 
 <script setup>
-import { GraduationCap, Mail, Lock, LogIn, Loader2, AlertTriangle } from 'lucide-vue-next'
+import { AlertTriangle, Eye, EyeOff, GraduationCap, Loader2, Lock, LogIn, Mail } from 'lucide-vue-next'
 import { useAdminAuthStore } from '~/stores/auth'
 
 const auth = useAdminAuthStore()
@@ -84,6 +93,7 @@ const router = useRouter()
 const form = reactive({ email: '', password: '' })
 const loading = ref(false)
 const error = ref('')
+const showPassword = ref(false)
 const errors = reactive({ email: '', password: '' })
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
