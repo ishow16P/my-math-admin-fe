@@ -72,7 +72,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="(s, i) in scores" :key="s._id" class="hover:bg-slate-50">
+            <tr v-for="(s, i) in sortedScores" :key="s._id" class="hover:bg-slate-50">
               <td class="px-4 py-3 text-slate-400 border-r border-slate-100">{{ i + 1 }}</td>
               <td class="px-4 py-3 font-mono text-slate-600 border-r border-slate-100">{{ s.studentId }}</td>
               <td class="px-4 py-3 text-slate-500 border-r border-slate-100 whitespace-nowrap">{{ s.title || '-' }}</td>
@@ -142,7 +142,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="(s, i) in scores" :key="s._id" class="hover:bg-slate-50">
+            <tr v-for="(s, i) in sortedScores" :key="s._id" class="hover:bg-slate-50">
               <td class="px-4 py-3 text-slate-400 border-r border-slate-100">{{ i + 1 }}</td>
               <td class="px-4 py-3 font-mono text-slate-600 border-r border-slate-100">{{ s.studentId }}</td>
               <td class="px-4 py-3 text-slate-500 border-r border-slate-100 whitespace-nowrap">{{ s.title || '-' }}</td>
@@ -453,6 +453,28 @@ function getScore(student, examType, qIndex, key) {
   return ans[key] ?? null;
 }
 
+function sortTotal(student) {
+  if (mode.value === "all") {
+    return allColumns.reduce(
+      (sum, col) => sum + (getScore(student, col.type, col.qIndex, "total") ?? 0),
+      0
+    );
+  }
+  if (!detailET.value) return 0;
+  return detailQuestions.value.reduce(
+    (sum, qi) => sum + (getScore(student, loadedExamType.value, qi, "total") ?? 0),
+    0
+  );
+}
+
+const sortedScores = computed(() =>
+  [...scores.value].sort((a, b) => {
+    const diff = sortTotal(b) - sortTotal(a);
+    if (diff !== 0) return diff;
+    return (a.studentId || "").localeCompare(b.studentId || "");
+  })
+);
+
 function avgScore(examType, qIndex, key) {
   const vals = scores.value
     .map((s) => getScore(s, examType, qIndex, key))
@@ -490,7 +512,7 @@ async function exportXLSX() {
     const h2 = ["", "", "", "", ""];
     allColumns.forEach((col) => { h2.push(col.questionCount > 1 ? `ข้อ ${col.qIndex + 1}` : "คะแนน"); });
     sheet1Rows.push(h1, h2);
-    scores.value.forEach((s, i) => {
+    sortedScores.value.forEach((s, i) => {
       const row = [i + 1, s.studentId, s.title || "", s.name, s.classroom ? `${s.level.replace("m", "")}/${s.classroom}` : "-"];
       allColumns.forEach((col) => { row.push(getScore(s, col.type, col.qIndex, "total") ?? ""); });
       sheet1Rows.push(row);
@@ -511,7 +533,7 @@ async function exportXLSX() {
     detailQuestions.value.forEach(() => { STEP_COLS.forEach((sc) => h3.push(sc.max)); });
     if (hasGrandTotal) h3.push(et.questionCount * 10);
     sheet1Rows.push(h1, h2, h3);
-    scores.value.forEach((s, i) => {
+    sortedScores.value.forEach((s, i) => {
       const row = [i + 1, s.studentId, s.title || "", s.name, s.classroom ? `${s.level.replace("m", "")}/${s.classroom}` : "-"];
       detailQuestions.value.forEach((qi) => { STEP_COLS.forEach((sc) => row.push(getScore(s, loadedExamType.value, qi, sc.key) ?? "")); });
       if (hasGrandTotal) {
