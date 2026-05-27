@@ -65,7 +65,9 @@
           <div class="flex items-center justify-between">
             <div>
               <div class="flex items-center gap-2 mb-1">
-                <span class="font-medium text-slate-800">{{ sub.studentId?.name || "N/A" }}</span>
+                <span class="font-medium text-slate-800">
+                  <span v-if="sub.studentId?.title" class="text-slate-500 font-normal mr-1">{{ sub.studentId.title }}</span>{{ sub.studentId?.name || "N/A" }}
+                </span>
                 <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="levelBadgeClass[sub.level]">{{ levelMap[sub.level] }}</span>
                 <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">{{ examTypeMap[sub.examType] || sub.examType }}</span>
               </div>

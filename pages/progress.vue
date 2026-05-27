@@ -53,7 +53,7 @@
             >
               <option value="">-- เลือกนักเรียน --</option>
               <option v-for="s in students" :key="s._id" :value="s._id">
-                {{ s.name }} ({{ s.studentId }})
+                {{ s.title ? s.title + ' ' : '' }}{{ s.name }} ({{ s.studentId }})
               </option>
             </select>
           </div>
@@ -93,7 +93,9 @@
               <User :size="24" class="text-indigo-600" />
             </div>
             <div>
-              <div class="font-semibold text-slate-800">{{ progress.student?.name }}</div>
+              <div class="font-semibold text-slate-800">
+                <span v-if="progress.student?.title" class="text-slate-500 font-normal mr-1">{{ progress.student.title }}</span>{{ progress.student?.name }}
+              </div>
               <div class="text-sm text-slate-400">
                 {{ progress.student?.studentId }} —
                 {{

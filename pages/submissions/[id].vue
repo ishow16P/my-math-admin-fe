@@ -25,7 +25,9 @@
         <div class="bg-white rounded-xl border border-slate-200 p-5">
           <div class="flex items-start justify-between gap-3 flex-wrap">
             <div>
-              <h1 class="text-base font-bold text-slate-800">{{ submission.studentId?.name }}</h1>
+              <h1 class="text-base font-bold text-slate-800">
+                <span v-if="submission.studentId?.title" class="text-slate-500 font-normal mr-1">{{ submission.studentId.title }}</span>{{ submission.studentId?.name }}
+              </h1>
               <div class="text-sm text-slate-400 mt-0.5">
                 รหัส {{ submission.studentId?.studentId }}
                 <span v-if="submission.studentId?.classroom"> · ห้อง {{ submission.studentId.level?.replace('m', '') }}/{{ submission.studentId.classroom }}</span>
@@ -548,7 +550,7 @@ async function exportSelfAssessment() {
   const sa = selfAssessment.value
 
   const rows = [
-    ['ชื่อ-นามสกุล', student?.name || '-'],
+    ['ชื่อ-นามสกุล', (student?.title ? student.title + ' ' : '') + (student?.name || '-')],
     ['รหัสนักเรียน', student?.studentId || '-'],
     [],
     ['ข้อ', 'คำถาม', 'คำตอบ'],

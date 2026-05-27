@@ -33,7 +33,9 @@
             class="flex items-center justify-between p-4 hover:bg-slate-50 transition"
           >
             <div>
-              <div class="font-medium text-slate-800">{{ sub.studentId?.name || 'N/A' }}</div>
+              <div class="font-medium text-slate-800">
+                <span v-if="sub.studentId?.title" class="text-slate-500 font-normal mr-1">{{ sub.studentId.title }}</span>{{ sub.studentId?.name || 'N/A' }}
+              </div>
               <div class="text-xs text-slate-400">{{ levelMap[sub.level] }} - {{ formatDate(sub.createdAt) }}</div>
             </div>
             <span class="px-2.5 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">

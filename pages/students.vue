@@ -42,7 +42,7 @@
           <thead class="bg-slate-50 text-slate-500">
             <tr>
               <th class="text-left px-4 py-3 font-medium">รหัส</th>
-              <th class="text-left px-4 py-3 font-medium">ชื่อ</th>
+              <th class="text-left px-4 py-3 font-medium">ชื่อ-นามสกุล</th>
               <th class="text-left px-4 py-3 font-medium">ระดับ</th>
               <th class="text-left px-4 py-3 font-medium">ห้อง</th>
               <th class="text-right px-4 py-3 font-medium">จัดการ</th>
@@ -56,7 +56,9 @@
             </tr>
             <tr v-for="s in students" :key="s._id" class="hover:bg-slate-50">
               <td class="px-4 py-3 font-mono text-slate-600">{{ s.studentId }}</td>
-              <td class="px-4 py-3 text-slate-800">{{ s.name }}</td>
+              <td class="px-4 py-3 text-slate-800">
+                <span v-if="s.title" class="text-slate-500 mr-1">{{ s.title }}</span>{{ s.name }}
+              </td>
               <td class="px-4 py-3">
                 <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="levelBadgeClass[s.level]">
                   {{ levelMap[s.level] }}
@@ -120,24 +122,37 @@
                 <p v-if="errors.studentId" class="mt-1 text-xs text-red-500">{{ errors.studentId }}</p>
               </div>
 
-              <!-- ชื่อ-นามสกุล -->
+              <!-- คำนำหน้า + ชื่อ-นามสกุล -->
               <div>
                 <label for="s-name" class="block text-sm font-medium text-slate-700 mb-1.5">
                   ชื่อ-นามสกุล <span class="text-red-500">*</span>
                 </label>
-                <input
-                  id="s-name"
-                  v-model="form.name"
-                  type="text"
-                  placeholder="ระบุชื่อ-นามสกุล..."
-                  @input="errors.name = ''"
-                  :class="[
-                    'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 placeholder:text-slate-300',
-                    errors.name
-                      ? 'border-red-400 focus:ring-red-300 bg-red-50'
-                      : 'border-slate-200 focus:ring-indigo-300'
-                  ]"
-                />
+                <div class="flex gap-2">
+                  <select
+                    id="s-title"
+                    v-model="form.title"
+                    class="w-36 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 bg-white"
+                  >
+                    <option value="">ไม่ระบุ</option>
+                    <option value="เด็กชาย">เด็กชาย</option>
+                    <option value="เด็กหญิง">เด็กหญิง</option>
+                    <option value="นาย">นาย</option>
+                    <option value="นางสาว">นางสาว</option>
+                  </select>
+                  <input
+                    id="s-name"
+                    v-model="form.name"
+                    type="text"
+                    placeholder="ระบุชื่อ-นามสกุล..."
+                    @input="errors.name = ''"
+                    :class="[
+                      'flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 placeholder:text-slate-300',
+                      errors.name
+                        ? 'border-red-400 focus:ring-red-300 bg-red-50'
+                        : 'border-slate-200 focus:ring-indigo-300'
+                    ]"
+                  />
+                </div>
                 <p v-if="errors.name" class="mt-1 text-xs text-red-500">{{ errors.name }}</p>
               </div>
 
@@ -248,7 +263,7 @@ const currentPage = ref(1)
 const showModal = ref(false)
 const showPassword = ref(false)
 const editingId = ref(null)
-const form = reactive({ studentId: '', name: '', level: 'm1', classroom: null, password: '' })
+const form = reactive({ studentId: '', title: '', name: '', level: 'm1', classroom: null, password: '' })
 const errors = reactive({ studentId: '', name: '', password: '' })
 
 function validate() {
@@ -268,6 +283,7 @@ function openModal(s = null) {
   if (s) {
     editingId.value = s._id
     form.studentId = s.studentId
+    form.title = s.title ?? ''
     form.name = s.name
     form.level = s.level
     form.classroom = s.classroom ?? null
@@ -275,6 +291,7 @@ function openModal(s = null) {
   } else {
     editingId.value = null
     form.studentId = ''
+    form.title = ''
     form.name = ''
     form.level = availableLevels.value[0] || 'm1'
     form.classroom = null

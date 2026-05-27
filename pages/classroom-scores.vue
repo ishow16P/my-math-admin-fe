@@ -55,6 +55,7 @@
             <tr class="border-b border-slate-200">
               <th rowspan="2" class="text-left px-4 py-2 font-medium whitespace-nowrap border-r border-slate-200">ลำดับ</th>
               <th rowspan="2" class="text-left px-4 py-2 font-medium whitespace-nowrap border-r border-slate-200">รหัส</th>
+              <th rowspan="2" class="text-left px-4 py-2 font-medium whitespace-nowrap border-r border-slate-200">คำนำหน้า</th>
               <th rowspan="2" class="text-left px-4 py-2 font-medium whitespace-nowrap border-r border-slate-200">ชื่อ-นามสกุล</th>
               <th rowspan="2" class="text-left px-4 py-2 font-medium whitespace-nowrap border-r border-slate-200">ห้อง</th>
               <th v-for="et in EXAM_TYPES" :key="et.type" :colspan="et.questionCount"
@@ -74,6 +75,7 @@
             <tr v-for="(s, i) in scores" :key="s._id" class="hover:bg-slate-50">
               <td class="px-4 py-3 text-slate-400 border-r border-slate-100">{{ i + 1 }}</td>
               <td class="px-4 py-3 font-mono text-slate-600 border-r border-slate-100">{{ s.studentId }}</td>
+              <td class="px-4 py-3 text-slate-500 border-r border-slate-100 whitespace-nowrap">{{ s.title || '-' }}</td>
               <td class="px-4 py-3 text-slate-800 border-r border-slate-100">{{ s.name }}</td>
               <td class="px-4 py-3 text-slate-500 whitespace-nowrap border-r border-slate-100">
                 {{ s.classroom ? `${s.level.replace("m", "")}/${s.classroom}` : "-" }}
@@ -89,7 +91,7 @@
           </tbody>
           <tfoot>
             <tr class="bg-slate-50 border-t-2 border-slate-200">
-              <td class="px-4 py-3 text-xs font-semibold text-slate-500 border-r border-slate-200" colspan="4">คะแนนเฉลี่ย</td>
+              <td class="px-4 py-3 text-xs font-semibold text-slate-500 border-r border-slate-200" colspan="5">คะแนนเฉลี่ย</td>
               <td v-for="col in allColumns" :key="`avg-${col.type}-${col.qIndex}`"
                 class="px-3 py-3 text-center border-l border-slate-100">
                 <template v-if="avgScore(col.type, col.qIndex, 'total') !== null">
@@ -109,6 +111,7 @@
             <tr class="border-b border-slate-200">
               <th rowspan="3" class="text-left px-4 py-2 font-medium whitespace-nowrap border-r border-slate-200">ลำดับ</th>
               <th rowspan="3" class="text-left px-4 py-2 font-medium whitespace-nowrap border-r border-slate-200">รหัส</th>
+              <th rowspan="3" class="text-left px-4 py-2 font-medium whitespace-nowrap border-r border-slate-200">คำนำหน้า</th>
               <th rowspan="3" class="text-left px-4 py-2 font-medium whitespace-nowrap border-r border-slate-200">ชื่อ-นามสกุล</th>
               <th rowspan="3" class="text-left px-4 py-2 font-medium whitespace-nowrap border-r border-slate-200">ห้อง</th>
               <th v-for="qi in detailQuestions" :key="qi" :colspan="5"
@@ -142,6 +145,7 @@
             <tr v-for="(s, i) in scores" :key="s._id" class="hover:bg-slate-50">
               <td class="px-4 py-3 text-slate-400 border-r border-slate-100">{{ i + 1 }}</td>
               <td class="px-4 py-3 font-mono text-slate-600 border-r border-slate-100">{{ s.studentId }}</td>
+              <td class="px-4 py-3 text-slate-500 border-r border-slate-100 whitespace-nowrap">{{ s.title || '-' }}</td>
               <td class="px-4 py-3 text-slate-800 border-r border-slate-100">{{ s.name }}</td>
               <td class="px-4 py-3 text-slate-500 whitespace-nowrap border-r border-slate-100">
                 {{ s.classroom ? `${s.level.replace("m", "")}/${s.classroom}` : "-" }}
@@ -481,34 +485,34 @@ async function exportXLSX() {
   // --- Sheet 1: คะแนน ---
   const sheet1Rows = [];
   if (mode.value === "all") {
-    const h1 = ["ลำดับ", "รหัส", "ชื่อ-นามสกุล", "ห้อง"];
+    const h1 = ["ลำดับ", "รหัส", "คำนำหน้า", "ชื่อ-นามสกุล", "ห้อง"];
     EXAM_TYPES.forEach((et) => { h1.push(et.label); for (let i = 1; i < et.questionCount; i++) h1.push(""); });
-    const h2 = ["", "", "", ""];
+    const h2 = ["", "", "", "", ""];
     allColumns.forEach((col) => { h2.push(col.questionCount > 1 ? `ข้อ ${col.qIndex + 1}` : "คะแนน"); });
     sheet1Rows.push(h1, h2);
     scores.value.forEach((s, i) => {
-      const row = [i + 1, s.studentId, s.name, s.classroom ? `${s.level.replace("m", "")}/${s.classroom}` : "-"];
+      const row = [i + 1, s.studentId, s.title || "", s.name, s.classroom ? `${s.level.replace("m", "")}/${s.classroom}` : "-"];
       allColumns.forEach((col) => { row.push(getScore(s, col.type, col.qIndex, "total") ?? ""); });
       sheet1Rows.push(row);
     });
-    const avgRow = ["", "", "", "เฉลี่ย"];
+    const avgRow = ["", "", "", "", "เฉลี่ย"];
     allColumns.forEach((col) => { avgRow.push(avgScore(col.type, col.qIndex, "total") ?? ""); });
     sheet1Rows.push(avgRow);
   } else {
     const et = detailET.value;
     const hasGrandTotal = et.questionCount > 1;
-    const h1 = ["ลำดับ", "รหัส", "ชื่อ-นามสกุล", "ห้อง"];
+    const h1 = ["ลำดับ", "รหัส", "คำนำหน้า", "ชื่อ-นามสกุล", "ห้อง"];
     detailQuestions.value.forEach((qi) => { const l = et.questionCount > 1 ? `ข้อ ${qi + 1}` : et.label; h1.push(l, "", "", "", ""); });
     if (hasGrandTotal) h1.push("คะแนนรวม");
-    const h2 = ["", "", "", ""];
+    const h2 = ["", "", "", "", ""];
     detailQuestions.value.forEach(() => { STEP_COLS.forEach((sc) => h2.push(sc.label)); });
     if (hasGrandTotal) h2.push("");
-    const h3 = ["", "", "", ""];
+    const h3 = ["", "", "", "", ""];
     detailQuestions.value.forEach(() => { STEP_COLS.forEach((sc) => h3.push(sc.max)); });
     if (hasGrandTotal) h3.push(et.questionCount * 10);
     sheet1Rows.push(h1, h2, h3);
     scores.value.forEach((s, i) => {
-      const row = [i + 1, s.studentId, s.name, s.classroom ? `${s.level.replace("m", "")}/${s.classroom}` : "-"];
+      const row = [i + 1, s.studentId, s.title || "", s.name, s.classroom ? `${s.level.replace("m", "")}/${s.classroom}` : "-"];
       detailQuestions.value.forEach((qi) => { STEP_COLS.forEach((sc) => row.push(getScore(s, loadedExamType.value, qi, sc.key) ?? "")); });
       if (hasGrandTotal) {
         const grandTotal = detailQuestions.value.reduce((sum, qi) => sum + (getScore(s, loadedExamType.value, qi, "total") ?? 0), 0);
